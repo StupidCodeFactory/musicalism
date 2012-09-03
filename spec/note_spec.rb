@@ -7,7 +7,7 @@ describe Musicalism::Note do
     }.to raise_exception Musicalism::Note::UnkownNoteError, 'H is not a note'
   end
   
-   Musicalism::Note::NOTES.each do |note|
+   Musicalism::Note::NOTES.flatten.each do |note|
     it "should be able to instanciate #{note}" do
       expect {
         Musicalism::Note.new note
@@ -15,6 +15,15 @@ describe Musicalism::Note do
     end
   end
 
+  describe "comparable" do
+    it "should be able to compare note based on the pitch, true case" do
+      Musicalism::Note.new('A').should == Musicalism::Note.new('A')
+    end
+
+    it "should be able to compare note based on the pitch, false case" do
+      Musicalism::Note.new('A').should_not == Musicalism::Note.new('D')
+    end
+  end
   describe "#transpose" do
     it "should be able to transpose a note to a given interval" do
       note = Musicalism::Note.new 'A'

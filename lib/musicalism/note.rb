@@ -2,8 +2,6 @@ module Musicalism
   class Note
     class UnkownNoteError < ArgumentError; end
 
-    include Comparable
-    
     attr_reader :pitch
     
     NOTES = [
@@ -37,8 +35,8 @@ module Musicalism
       new_pitches.map { |p| self.class.new p } 
     end
 
-    def <=> other_note
-      pitch <=> other_note.pitch
+    def == other_note
+      pitch == other_note.pitch
     end
 
     private
