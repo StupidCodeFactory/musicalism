@@ -29,3 +29,5 @@ module Musicalism
 
   end
 end
+require 'musicalism/scale/minor/harmonic'
+require 'musicalism/scale/minor/melodic'

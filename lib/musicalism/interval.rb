@@ -1,15 +1,9 @@
 module Musicalism
+  # Basic definitions of musical intervals
   class Interval
+
     SEMITONE = 1
-    [ 
-      [ :perfect_unison, :diminished_second ],
-      [ :minor_second,    :augmented_unison ],
-      [ :major_second,    :dimnished_third ],
-      [ :minor_third,     :augmented_second ],
-      [ :major_third,     :dimnished_forth ],
-      [:perfect_forth],
-    
-    ]
+
     def perfect_unison
       0
     end
@@ -28,7 +22,7 @@ module Musicalism
     def minor_third
       SEMITONE * 3
     end
-    alias_method, :augmented_second, :minor_third
+    alias_method :augmented_second, :minor_third
   
     def major_third
       SEMITONE * 4
@@ -40,7 +34,7 @@ module Musicalism
     end
     alias_method :augmented_third, :perfect_forth
   
-    def :augmented_forth
+    def augmented_forth
       SEMITONE * 6
     end
     alias_method :diminished_fifth, :augmented_forth

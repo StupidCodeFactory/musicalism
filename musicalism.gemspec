@@ -16,4 +16,6 @@ Gem::Specification.new do |gem|
   gem.version       = Musicalism::VERSION
   
   gem.add_development_dependency 'rspec'
+  gem.add_development_dependency 'ZenTest'
+  gem.add_development_dependency 'yard'
 end
