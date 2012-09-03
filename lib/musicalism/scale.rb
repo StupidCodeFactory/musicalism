@@ -1,10 +1,14 @@
 module Musicalism
 
   class Scale
-    def initialize
+    def initialize root_note
+      @root_note = root_note.is_a?(Note) ? root_note : Note.new(root_note)
       @interval_generator = Interval.new
     end
-
+    
+    def notes
+      [ @root_note, second, third, forth, fifth, sixth, seventh ]
+    end
   end
 
 end

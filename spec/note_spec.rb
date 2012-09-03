@@ -18,12 +18,12 @@ describe Musicalism::Note do
   describe "#transpose" do
     it "should be able to transpose a note to a given interval" do
       note = Musicalism::Note.new 'A'
-      note.transpose(Musicalism::Interval.new.perfect_forth).should == ['D']
+      note.transpose(Musicalism::Interval.new.perfect_forth).should == [Musicalism::Note.new('D')]
     end
     
     it "should be able to transpose a note even with the special B/C and E/F interval" do
       note = Musicalism::Note.new 'C'
-      note.transpose(Musicalism::Interval.new.major_sixth).should == ['A']
+      note.transpose(Musicalism::Interval.new.major_sixth).should == [Musicalism::Note.new('A')]
     end
   end
 end

@@ -2,42 +2,53 @@ module Musicalism
   class Note
     class UnkownNoteError < ArgumentError; end
 
-    NOTES = %w( A #A bA B #B bB C #C bC D #D bD E #E bE F #F bF G #G bG ).freeze
-    NOTES_BIT = [
+    include Comparable
+    
+    attr_reader :pitch
+    
+    NOTES = [
       ['A'],
       ['#A', 'bB'],
-      ['B'],
-      ['#B', 'C'],
+      ['B',  'bC'],
+      ['C',  '#B'],
       ['#C', 'bD'],
       ['D'],
       ['#D', 'bE'],
-      ['E'],
-      ['#E', 'F'],
-      ['F'],
+      ['E',  'bF'],
+      ['F',  '#E'],
       ['#F', 'bG'],
       ['G'],
       ['#G', 'bA']
-    ]
+      ].freeze
 
+    # CIRCLE_OF_FIFTH = NOTES.ma
     def initialize note
-      raise UnkownNoteError.new "#{note} is not a note" unless NOTES.include? note
+      raise UnkownNoteError.new "#{note} is not a note" unless is_note? note
       @pitch = note
     end
     
     def transpose interval
-      debugger
-      note_set_index = pitch_index + 1 + interval
-      if NOTES_BIT.length < note_set_index
-        NOTES_BIT.at(note_set_index)
+      new_note_index = pitch_index + interval
+      if NOTES.length < new_note_index 
+        new_pitches = NOTES[new_note_index]
       else
-        
+        new_pitches = NOTES[new_note_index - NOTES.length]
       end
+      new_pitches.map { |p| self.class.new p } 
+    end
+
+    def <=> other_note
+      pitch <=> other_note.pitch
     end
 
     private
 
+    def is_note? note
+      NOTES.flatten.include? note
+    end
+
     def pitch_index
-      NOTES_BIT.index {|a| a.include?(@pitch) }
+      NOTES.index {|a| a.include? @pitch }
     end
   end
 end
