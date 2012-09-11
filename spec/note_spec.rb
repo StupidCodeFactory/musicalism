@@ -27,12 +27,23 @@ describe Musicalism::Note do
   describe "#transpose" do
     it "should be able to transpose a note to a given interval" do
       note = Musicalism::Note.new 'A'
-      note.transpose(Musicalism::Interval.new.perfect_forth).should == [Musicalism::Note.new('D')]
+      note.transpose(Musicalism::Interval.new.perfect_forth).should == [Musicalism::Note.new('##C'), Musicalism::Note.new('D'), Musicalism::Note.new('bbE')]
     end
     
     it "should be able to transpose a note even with the special B/C and E/F interval" do
       note = Musicalism::Note.new 'C'
-      note.transpose(Musicalism::Interval.new.major_sixth).should == [Musicalism::Note.new('A')]
+      note.transpose(Musicalism::Interval.new.major_sixth).should == [Musicalism::Note.new('##G'), Musicalism::Note.new('A'), Musicalism::Note.new('bbB')]
     end
+
+    it "transpose even with double bb" do
+      note = Musicalism::Note.new 'bbC'
+      note.transpose(Musicalism::Interval.new.minor_second).should == [Musicalism::Note.new('##A'), Musicalism::Note.new('B'), Musicalism::Note.new('bC')]
+    end
+
+    it "transpose even with double ##" do
+      note = Musicalism::Note.new '##E'
+      note.transpose(Musicalism::Interval.new.augmented_forth).should == [Musicalism::Note.new('#B'), Musicalism::Note.new('C'), Musicalism::Note.new('bbD')]
+    end
+    
   end
 end

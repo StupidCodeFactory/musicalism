@@ -5,21 +5,22 @@ module Musicalism
     attr_reader :pitch
     
     NOTES = [
-      ['A'],
-      ['#A', 'bB'],
-      ['B',  'bC'],
-      ['C',  '#B'],
-      ['#C', 'bD'],
-      ['D'],
-      ['#D', 'bE'],
-      ['E',  'bF'],
-      ['F',  '#E'],
-      ['#F', 'bG'],
-      ['G'],
+      ['##G', 'A', 'bbB'],
+      ['#A',  'bB', 'bbC'],
+      ['##A', 'B',  'bC'],
+      ['#B',  'C',  'bbD'],
+      ['##B', '#C', 'bD'],
+      ['##C', 'D',  'bbE'],
+      ['#D',  'bE'],
+      ['##D', 'E',  'bF'],
+      ['F',   '#E', 'bbG'],
+      ['##E', '#F', 'bG'],
+      ['##F', 'G', 'bbA'],
       ['#G', 'bA']
-      ].freeze
+    ]
 
-    # CIRCLE_OF_FIFTH = NOTES.ma
+    CIRCLE_OF_FIFTH = []
+
     def initialize note
       raise UnkownNoteError.new "#{note} is not a note" unless is_note? note
       @pitch = note
@@ -27,11 +28,13 @@ module Musicalism
     
     def transpose interval
       new_note_index = pitch_index + interval
-      if NOTES.length < new_note_index 
-        new_pitches = NOTES[new_note_index]
+
+      new_pitches = if NOTES.length > new_note_index 
+        NOTES[new_note_index]
       else
-        new_pitches = NOTES[new_note_index - NOTES.length]
+        NOTES[new_note_index - NOTES.length]
       end
+
       new_pitches.map { |p| self.class.new p } 
     end
 
