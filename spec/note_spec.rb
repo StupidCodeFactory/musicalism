@@ -24,6 +24,23 @@ describe Musicalism::Note do
       Musicalism::Note.new('A').should_not == Musicalism::Note.new('D')
     end
   end
+  
+  describe "#interval_from" do
+    describe "return the interval to a given note " do
+      it "going up the scale" do
+        Musicalism::Note.new('C').interval_from(Musicalism::Note.new('G')).should == 7
+      end
+      
+      it "going down the scale" do
+        Musicalism::Note.new('B').interval_from(Musicalism::Note.new('#B')).should == 1
+      end
+      
+      it "also with enharmonics" do
+        Musicalism::Note.new('C').interval_from(Musicalism::Note.new('#B')).should == 0
+      end
+    end
+  end
+  
   describe "#transpose" do
     it "should be able to transpose a note to a given interval" do
       note = Musicalism::Note.new 'A'

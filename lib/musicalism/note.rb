@@ -25,7 +25,19 @@ module Musicalism
       raise UnkownNoteError.new "#{note} is not a note" unless is_note? note
       @pitch = note
     end
-    
+
+    def interval_from note
+      target_index = NOTES.index {|a| a.include? note.pitch }
+      self_index = NOTES.index {|a| a.include? @pitch }
+      if self_index > target_index
+        self_index - target_index
+      elsif target_index % 12 == 0
+        0
+      else
+        target_index - self_index
+      end
+    end
+
     def transpose interval
       new_note_index = pitch_index + interval
 
@@ -41,6 +53,8 @@ module Musicalism
     def == other_note
       pitch == other_note.pitch
     end
+
+    
 
     private
 
