@@ -5,3 +5,5 @@ gemspec
 gem 'debugger', :platform => 'mri_19'
 gem 'pry'
 gem 'awesome_print', :require => 'ap'
+gem 'midi-topaz', :require => 'topaz'
+gem 'interactive_editor'
