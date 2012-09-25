@@ -15,54 +15,278 @@ describe Musicalism::Scale do
   end
   
   describe "Chords" do
+    describe "Major" do
+      
+      describe "#tonic_chord" do
+        let(:scale) { Musicalism::MajorScale.new('D') }
+        it "should return a well formed chord" do
+          scale.tonic_chord.should == Musicalism::Chord.new(['D', '#F', 'A'].map { |n| Musicalism::Note.new n })
+        end
 
-    describe "#tonic_chord" do
-      it "should return a well formed chord" do
-        Musicalism::MajorScale.new('D').tonic_chord.should == ['D', '#F', 'A'].map { |n| Musicalism::Note.new n }
+        describe "with inversion" do
+          it "should return a well formed chord, inversion 1" do
+            scale.tonic_chord(:inversion => 1).should == Musicalism::Chord.new(['#F', 'A', 'D'].map { |n| Musicalism::Note.new n })
+          end
+
+          it "should return a well formed chord, inversion 2" do
+            scale.tonic_chord(:inversion => 2).should == Musicalism::Chord.new(['A', 'D', '#F'].map { |n| Musicalism::Note.new n })
+          end
+        end
+
+      end
+    
+      describe "#supertonic_chord" do
+        let(:scale) { Musicalism::MajorScale.new('bD') }
+        it "should return a well formed chord" do
+          scale.supertonic_chord.should == Musicalism::Chord.new(['bE', 'bG', 'bB'].map { |n| Musicalism::Note.new n })
+        end
+      
+        describe "with inversion" do
+          it "should return a well formed chord, inversion 1" do
+            scale.supertonic_chord(:inversion => 1).should == Musicalism::Chord.new(['bG', 'bB', 'bE'].map { |n| Musicalism::Note.new n })
+          end
+
+          it "should return a well formed chord, inversion 2" do
+            scale.supertonic_chord(:inversion => 2).should == Musicalism::Chord.new(['bB', 'bE', 'bG'].map { |n| Musicalism::Note.new n })
+          end
+        end
+      
+      end
+
+      describe "#mediant" do
+        let(:scale) { Musicalism::MajorScale.new('B') }
+        it "should return a well formed chord" do
+          scale.mediant_chord.should == Musicalism::Chord.new(['#D', '#F', '#A'].map { |n| Musicalism::Note.new n })
+        end
+      
+        describe "with inversion" do
+          it "should return a well formed chord, inversion 1" do
+            scale.mediant_chord(:inversion => 1).should == Musicalism::Chord.new(['#F', '#A', '#D'].map { |n| Musicalism::Note.new n })
+          end
+
+          it "should return a well formed chord, inversion 2" do
+            scale.mediant_chord(:inversion => 2).should == Musicalism::Chord.new(['#A', '#D', '#F'].map { |n| Musicalism::Note.new n })
+          end
+        end
+
+      end
+
+      describe "#subdominante" do
+        let(:scale) { Musicalism::MajorScale.new('#E') }
+        it "should return a well formed chord" do
+          scale.subdominante_chord.should == Musicalism::Chord.new(['#A', '##C', '#E'].map { |n| Musicalism::Note.new n })
+        end
+
+        describe "with inversion" do
+          it "should return a well formed chord, inversion 1" do
+            scale.subdominante_chord(:inversion => 1).should == Musicalism::Chord.new(['##C', '#E', '#A'].map { |n| Musicalism::Note.new n })
+          end
+
+          it "should return a well formed chord, inversion 2" do
+            scale.subdominante_chord(:inversion => 2).should == Musicalism::Chord.new(['#E', '#A', '##C'].map { |n| Musicalism::Note.new n })
+          end
+        end
+
+      end
+
+      describe "#dominante" do
+        let(:scale) { Musicalism::MajorScale.new('#B') }
+        it "should return a well formed chord" do
+          scale.dominante_chord.should == Musicalism::Chord.new(['##F', '##A', '##C'].map { |n| Musicalism::Note.new n })
+        end
+      
+        describe "with inversion" do
+          it "should return a well formed chord, inversion 1" do
+            scale.dominante_chord(:inversion => 1).should == Musicalism::Chord.new(['##A', '##C', '##F'].map { |n| Musicalism::Note.new n })
+          end
+
+          it "should return a well formed chord, inversion 2" do
+            scale.dominante_chord(:inversion => 2).should == Musicalism::Chord.new(['##C', '##F', '##A'].map { |n| Musicalism::Note.new n })
+          end
+        end
+
+      end
+
+      describe "#submediant" do
+        let(:scale) { Musicalism::MajorScale.new('bF') }
+        it "should return a well formed chord" do
+          scale.submediant_chord.should == Musicalism::Chord.new(['bD', 'bF', 'bA'].map { |n| Musicalism::Note.new n })
+        end
+
+        describe "with inversion" do
+          it "should return a well formed chord, inversion 1" do
+            scale.submediant_chord(:inversion => 1).should == Musicalism::Chord.new(['bF', 'bA', 'bD'].map { |n| Musicalism::Note.new n })
+          end
+
+          it "should return a well formed chord, inversion 2" do
+            scale.submediant_chord(:inversion => 2).should == Musicalism::Chord.new(['bA', 'bD', 'bF'].map { |n| Musicalism::Note.new n })
+          end
+        end
+
+      end
+
+      describe "#subtonic" do
+        let(:scale) { Musicalism::MajorScale.new('#D') }
+        it "should return a well formed chord" do
+          scale.subtonic_chord.should == Musicalism::Chord.new(['##C', '#E', '#G'].map { |n| Musicalism::Note.new n })
+        end
+      
+        describe "with inversion" do
+          it "should return a well formed chord, inversion 1" do
+            scale.subtonic_chord(:inversion => 1).should == Musicalism::Chord.new(['#E', '#G', '##C'].map { |n| Musicalism::Note.new n })
+          end
+
+          it "should return a well formed chord, inversion 2" do
+            scale.subtonic_chord(:inversion => 2).should == Musicalism::Chord.new(['#G', '##C', '#E'].map { |n| Musicalism::Note.new n })
+          end
+        end
+      
       end
     end
     
-    describe "#supertonic_chord" do
-      it "should return a well formed chord" do
-        s = Musicalism::MajorScale.new('bD')
-        s.supertonic_chord.should == ['bE', 'bG', 'bB'].map { |n| Musicalism::Note.new n }
-      end
-    end
+    describe "Minor" do
 
-    describe "#mediant" do
-      it "should return a well formed chord" do
-        s = Musicalism::MajorScale.new('B')
-        s.mediant_chord.should == ['#D', '#F', '#A'].map { |n| Musicalism::Note.new n }
-      end
-    end
+      describe "#tonic" do
 
-    describe "#subdominante" do
-      it "should return a well formed chord" do
-        s = Musicalism::MajorScale.new('#E')
-        s.subdominante_chord.should == ['#A', '##C', '#E'].map { |n| Musicalism::Note.new n }
-      end
-    end
+        let(:scale) { Musicalism::MinorScale.new('C') }
 
-    describe "#dominante" do
-      it "should return a well formed chord" do
-        s = Musicalism::MajorScale.new('#B')
-        s.dominante_chord.should == ['##F', '##A', '##C'].map { |n| Musicalism::Note.new n }
-      end
-    end
+        it "should return a well formed chord" do
+          scale.tonic_chord.should == Musicalism::Chord.new(['C', 'bE', 'G'].map { |n| Musicalism::Note.new n })
+        end
+      
+        describe "with inversion" do
 
-    describe "#submediant" do
-      it "should return a well formed chord" do
-        s = Musicalism::MajorScale.new('bF')
-        s.submediant_chord.should == ['bD', 'bF', 'bA'].map { |n| Musicalism::Note.new n }
-      end
-    end
+          it "should return a well formed chord, inversion 1" do
+            scale.tonic_chord(:inversion => 1).should == Musicalism::Chord.new(['bE', 'G', 'C'].map { |n| Musicalism::Note.new n })
+          end
 
-    describe "#subtonic" do
-      it "should return a well formed chord" do
-        s = Musicalism::MajorScale.new('#D')
-        s.subtonic_chord.should == ['##C', '#E', '#G'].map { |n| Musicalism::Note.new n }
-      end
-    end
+          it "should return a well formed chord, inversion 2" do
+            scale.tonic_chord(:inversion => 2).should == Musicalism::Chord.new(['G', 'C', 'bE'].map { |n| Musicalism::Note.new n })
+          end
 
+        end
+
+      end
+
+      describe "#subtonic" do
+
+        let(:scale) { Musicalism::MinorScale.new('bB') }
+
+        it "should return a well formed chord" do
+          scale.supertonic_chord.should == Musicalism::Chord.new(['C', 'bE', 'bG'].map { |n| Musicalism::Note.new n })
+        end
+
+        describe "with inversion" do
+
+          it "should return a well formed chord, inversion 1" do
+            scale.supertonic_chord(:inversion => 1).should == Musicalism::Chord.new(['bE', 'bG', 'C'].map { |n| Musicalism::Note.new n })
+          end
+
+          it "should return a well formed chord, inversion 2" do
+            scale.supertonic_chord(:inversion => 2).should == Musicalism::Chord.new(['bG', 'C', 'bE'].map { |n| Musicalism::Note.new n })
+          end
+
+        end
+
+      end
+
+      describe "#mediant" do
+
+        let(:scale) { Musicalism::MinorScale.new('#B') }
+
+        it "should return a well formed chord" do
+          scale.mediant_chord.should == Musicalism::Chord.new(['#D', '##F', '#A'].map { |n| Musicalism::Note.new n })
+        end
+      
+        describe "with inversion" do
+          it "should return a well formed chord, inversion 1" do
+            scale.mediant_chord(:inversion => 1).should == Musicalism::Chord.new(['##F', '#A', '#D'].map { |n| Musicalism::Note.new n })
+          end
+
+          it "should return a well formed chord, inversion 2" do
+            scale.mediant_chord(:inversion => 2).should == Musicalism::Chord.new(['#A', '#D', '##F'].map { |n| Musicalism::Note.new n })
+          end
+        end
+
+      end
+
+      describe "#subdominante" do
+
+        let(:scale) { Musicalism::MinorScale.new('#E') }
+        it "should return a well formed chord" do
+          scale.subdominante_chord.should == Musicalism::Chord.new(['#A', '#C', '#E'].map { |n| Musicalism::Note.new n })
+        end
+
+        describe "with inversion" do
+          it "should return a well formed chord, inversion 1" do
+            scale.subdominante_chord(:inversion => 1).should == Musicalism::Chord.new(['#C', '#E', '#A'].map { |n| Musicalism::Note.new n })
+          end
+
+          it "should return a well formed chord, inversion 2" do
+            scale.subdominante_chord(:inversion => 2).should == Musicalism::Chord.new(['#E', '#A', '#C'].map { |n| Musicalism::Note.new n })
+          end
+        end
+
+      end
+
+      describe "#dominante" do
+        let(:scale) { Musicalism::MinorScale.new('B') }
+        it "should return a well formed chord" do
+          scale.dominante_chord.should == Musicalism::Chord.new(['#F', 'A', '#C'].map { |n| Musicalism::Note.new n })
+        end
+      
+        describe "with inversion" do
+          it "should return a well formed chord, inversion 1" do
+            scale.dominante_chord(:inversion => 1).should == Musicalism::Chord.new(['A', '#C', '#F'].map { |n| Musicalism::Note.new n })
+          end
+
+          it "should return a well formed chord, inversion 2" do
+            scale.dominante_chord(:inversion => 2).should == Musicalism::Chord.new(['#C', '#F', 'A'].map { |n| Musicalism::Note.new n })
+          end
+        end
+
+      end
+
+      describe "#submediant" do
+
+        let(:scale) { Musicalism::MinorScale.new('bD') }
+
+        it "should return a well formed chord" do
+          scale.submediant_chord.should == Musicalism::Chord.new(['bbB', 'bD', 'bF'].map { |n| Musicalism::Note.new n })
+        end
+      
+        describe "with inversion" do
+          it "should return a well formed chord, inversion 1" do
+            scale.submediant_chord(:inversion => 1).should == Musicalism::Chord.new(['bD', 'bF', 'bbB'].map { |n| Musicalism::Note.new n })
+          end
+
+          it "should return a well formed chord, inversion 2" do
+            scale.submediant_chord(:inversion => 2).should == Musicalism::Chord.new(['bF', 'bbB', 'bD'].map { |n| Musicalism::Note.new n })
+          end
+        end
+
+      end
+
+      describe "#subtonic" do
+
+        let(:scale) { Musicalism::MinorScale.new('D') }
+
+        it "should return a well formed chord" do
+          scale.subtonic_chord.should == Musicalism::Chord.new(['C', 'E', 'G'].map { |n| Musicalism::Note.new n })
+        end
+      
+        describe "with inversion" do
+          it "should return a well formed chord, inversion 1" do
+            scale.subtonic_chord(:inversion => 1).should == Musicalism::Chord.new(['E', 'G', 'C'].map { |n| Musicalism::Note.new n })
+          end
+
+          it "should return a well formed chord, inversion 2" do
+            scale.subtonic_chord(:inversion => 2).should == Musicalism::Chord.new(['G', 'C', 'E'].map { |n| Musicalism::Note.new n })
+          end
+        end
+
+      end
+
+    end
   end
 end

@@ -1,6 +1,5 @@
 module Musicalism
   class Scale
-
     attr_reader :alterations
     attr_reader :root_note
     attr_reader :interval_generator
@@ -22,32 +21,33 @@ module Musicalism
       calcuate_alterations
     end
 
-    def tonic_chord
-      @tonic_chord ||= tertian_from :tonic
+    # TODO: cache this mofos!
+    def tonic_chord options = {}
+      @tonic_chord ||= Chord.new(tertian_from(:tonic), options)
     end
 
-    def supertonic_chord
-      @supertonic_chord ||= tertian_from :supertonic
+    def supertonic_chord options = {}
+      @supertonic_chord ||= Chord.new tertian_from(:supertonic), options
     end
 
-    def mediant_chord
-      @mediant_chord ||= tertian_from :mediant
+    def mediant_chord options = {}
+      @mediant_chord ||= Chord.new tertian_from(:mediant), options
     end
 
-    def subdominante_chord
-      @subdominante_chord ||= tertian_from :subdominant
+    def subdominante_chord options = {}
+      @subdominante_chord ||= Chord.new tertian_from(:subdominant), options
     end
 
-    def dominante_chord
-      @dominante_chord ||= tertian_from :dominant
+    def dominante_chord options = {}
+      @dominante_chord ||= Chord.new tertian_from(:dominant), options
     end
 
-    def submediant_chord
-      @submediant_chord ||= tertian_from :submediant
+    def submediant_chord options = {}
+      @submediant_chord ||= Chord.new tertian_from(:submediant), options
     end
 
-    def subtonic_chord
-      @subtonic_chord ||= tertian_from :subtonic
+    def subtonic_chord options = {}
+      @subtonic_chord ||= Chord.new tertian_from(:subtonic), options
     end
 
     def notes

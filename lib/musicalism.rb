@@ -1,5 +1,6 @@
 require 'musicalism/interval'
 require 'musicalism/note'
+require 'musicalism/chord'
 require 'musicalism/scale'
 require 'musicalism/version'
 
