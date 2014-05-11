@@ -4,8 +4,8 @@ require File.expand_path('../lib/musicalism/version', __FILE__)
 Gem::Specification.new do |gem|
   gem.authors       = ["Yann Marquet"]
   gem.email         = ["ymarquet@gmail.com"]
-  gem.description   = %q{TODO: Write a gem description}
-  gem.summary       = %q{TODO: Write a gem summary}
+  gem.description   = %q{Notes and scales abstraction library}
+  gem.summary       = %q{Notes and scales abstraction library}
   gem.homepage      = ""
 
   gem.files         = `git ls-files`.split($\)
@@ -14,8 +14,9 @@ Gem::Specification.new do |gem|
   gem.name          = "musicalism"
   gem.require_paths = ["lib"]
   gem.version       = Musicalism::VERSION
-  
+
   gem.add_development_dependency 'rspec'
   gem.add_development_dependency 'ZenTest'
   gem.add_development_dependency 'yard'
+  gem.add_development_dependency 'rake'
 end
