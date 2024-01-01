@@ -1,8 +1,6 @@
 module Musicalism
-
   class MajorScale < Scale
-
-    def initialize pitch
+    def initialize(pitch)
       super pitch
       @scale_structure = [
         @interval_generator.major_second,
@@ -13,6 +11,5 @@ module Musicalism
         @interval_generator.major_seventh
       ]
     end
-
   end
 end

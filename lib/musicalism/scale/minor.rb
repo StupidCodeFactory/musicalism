@@ -1,9 +1,7 @@
 module Musicalism
-  
   # defaults to natural minor scale
   class MinorScale < Scale
-
-    def initialize pitch
+    def initialize(pitch)
       super pitch
       @scale_structure = [
         @interval_generator.major_second,
@@ -14,7 +12,6 @@ module Musicalism
         @interval_generator.minor_seventh
       ]
     end
-
   end
 end
 require 'musicalism/scale/minor/harmonic'

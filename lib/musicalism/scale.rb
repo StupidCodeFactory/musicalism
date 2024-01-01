@@ -1,20 +1,18 @@
 module Musicalism
   class Scale
-    attr_reader :alterations
-    attr_reader :root_note
-    attr_reader :interval_generator
+    attr_reader :alterations, :root_note, :interval_generator
 
-    DEGREES = [
-      :tonic,
-      :supertonic,
-      :mediant,
-      :subdominant,
-      :dominant,
-      :submediant,
-      :subtonic
+    DEGREES = %i[
+      tonic
+      supertonic
+      mediant
+      subdominant
+      dominant
+      submediant
+      subtonic
     ].freeze
 
-    def initialize root_note
+    def initialize(root_note)
       @root_note = root_note.is_a?(Note) ? root_note : Note.new(root_note)
       @interval_generator = Interval.new
       @alterations = []
@@ -22,31 +20,31 @@ module Musicalism
     end
 
     # TODO: cache this mofos!
-    def tonic_chord options = {}
+    def tonic_chord(options = {})
       @tonic_chord ||= Chord.new(tertian_from(:tonic), options)
     end
 
-    def supertonic_chord options = {}
+    def supertonic_chord(options = {})
       @supertonic_chord ||= Chord.new tertian_from(:supertonic), options
     end
 
-    def mediant_chord options = {}
+    def mediant_chord(options = {})
       @mediant_chord ||= Chord.new tertian_from(:mediant), options
     end
 
-    def subdominante_chord options = {}
+    def subdominante_chord(options = {})
       @subdominante_chord ||= Chord.new tertian_from(:subdominant), options
     end
 
-    def dominante_chord options = {}
+    def dominante_chord(options = {})
       @dominante_chord ||= Chord.new tertian_from(:dominant), options
     end
 
-    def submediant_chord options = {}
+    def submediant_chord(options = {})
       @submediant_chord ||= Chord.new tertian_from(:submediant), options
     end
 
-    def subtonic_chord options = {}
+    def subtonic_chord(options = {})
       @subtonic_chord ||= Chord.new tertian_from(:subtonic), options
     end
 
@@ -65,27 +63,26 @@ module Musicalism
       fifth_circle_index = 0
       loop do
         break if scale.first.include? @root_note.pitch
+
         fifth_circle_index += 1
         scale = scale.rotate 7
       end
 
       scale = Musicalism::Note::NOTES.rotate 9
-      1.upto(fifth_circle_index) do |variable|
+      1.upto(fifth_circle_index) do |_variable|
         @alterations << scale.first
         scale = scale.rotate 7
       end
     end
 
     private
-    
-    def tertian_from degree
-      [0, 2, 4].inject([]) do |chord_notes, i|
+
+    def tertian_from(degree)
+      [0, 2, 4].each_with_object([]) do |i, chord_notes|
         chord_notes << notes.rotate(DEGREES.index(degree)).rotate(i).first
-        chord_notes
       end
     end
   end
-
 end
 require 'musicalism/scale/major'
 require 'musicalism/scale/minor'

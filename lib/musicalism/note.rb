@@ -2,7 +2,7 @@ module Musicalism
   class Note
     class UnkownNoteError < ArgumentError; end
 
-    attr_reader :pitch
+    attr_reader :pitch, :octave
 
     NOTES = [
       ['G##', 'A', 'Bbb'],
@@ -23,8 +23,8 @@ module Musicalism
 
     def self.notes_to_midi_map
       @@notes_to_midi_map ||= begin
-        c_index = NOTES.index { |n| n.include? "C" }
-        notes = NOTES[c_index..-1] + NOTES[0..(c_index-1)]
+        c_index = NOTES.index { |n| n.include? 'C' }
+        notes = NOTES[c_index..-1] + NOTES[0..(c_index - 1)]
         h = {}
         counter = 0
         128.times do |i|
@@ -33,32 +33,33 @@ module Musicalism
             h[n] << i
           end
           notes.rotate!
-          counter += 1 if i % 12 ==  0
+          counter += 1 if (i % 12).zero?
         end
 
         h.freeze
       end
     end
 
-    def initialize note, octave = 3
-      raise UnkownNoteError.new "#{note} is not a note" unless is_note? note
-      @pitch = note
-      @octave = octave
+    def initialize(note, octave = 3)
+      raise UnkownNoteError, "#{note} is not a valid note" unless note?(note)
+
+      self.pitch = note
+      self.octave = octave
     end
 
-    def interval_from note
-      target_index = NOTES.index {|a| a.include? note.pitch }
-      self_index = NOTES.index {|a| a.include? @pitch }
+    def interval_from(note)
+      target_index = NOTES.index { |a| a.include?(note.pitch) }
+      self_index = NOTES.index { |a| a.include?(pitch) }
       if self_index > target_index
         self_index - target_index
-      elsif target_index % 12 == 0
+      elsif (target_index % 12).zero?
         0
       else
         target_index - self_index
       end
     end
 
-    def transpose interval
+    def transpose(interval)
       new_note_index = pitch_index + interval
 
       new_pitches = if NOTES.length > new_note_index
@@ -70,22 +71,25 @@ module Musicalism
       new_pitches.map { |p| self.class.new p }
     end
 
-    def == other_note
-      pitch == other_note.pitch
+    def to_midi
+      self.class.notes_to_midi_map[pitch][octave - 1]
     end
 
-    def to_midi
-      self.class.notes_to_midi_map[@pitch][@octave-1]
+    # maybe note with same pitch but different octave could be equal-ish
+    def ==(other)
+      pitch == other.pitch && octave == other.octave
     end
 
     private
 
-    def is_note? note
-      NOTES.flatten.include? note
+    attr_writer :pitch, :octave
+
+    def note?(note)
+      NOTES.flatten.include?(note)
     end
 
     def pitch_index
-      NOTES.index {|a| a.include? @pitch }
+      NOTES.index { |a| a.include?(pitch) }
     end
 
     notes_to_midi_map
