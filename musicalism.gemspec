@@ -1,11 +1,11 @@
 require File.expand_path('lib/musicalism/version', __dir__)
 
 Gem::Specification.new do |gem|
-  gem.authors       = ["Yann Marquet"]
-  gem.email         = ["ymarquet@gmail.com"]
-  gem.description   = %q{Notes and scales abstraction library}
-  gem.summary       = %q{Notes and scales abstraction library}
-  gem.homepage      = ""
+  gem.authors       = ['Yann Marquet']
+  gem.email         = ['ymarquet@gmail.com']
+  gem.description   = 'Notes and scales abstraction library'
+  gem.summary       = 'Notes and scales abstraction library'
+  gem.homepage      = ''
 
   gem.files         = `git ls-files`.split($\)
   gem.executables   = gem.files.grep(%r{^bin/}).map { |f| File.basename(f) }

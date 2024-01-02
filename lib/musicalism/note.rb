@@ -1,5 +1,8 @@
+require 'debug'
 module Musicalism
   class Note
+    include Comparable
+
     class UnkownNoteError < ArgumentError; end
 
     attr_reader :pitch, :octave
@@ -40,11 +43,30 @@ module Musicalism
       end
     end
 
-    def initialize(note, octave = 3)
-      raise UnkownNoteError, "#{note} is not a valid note" unless note?(note)
+    NOTE_PARSER = /
+      ^(?<pitch>(?:(?:a|b)\#{0,2}|(?:bb{0,2})))(?<octave>0)$|
+      ^(?<pitch>[a-g](?:\#|b){0,2})(?<octave>[1-6])$|
+      ^(?<pitch>(?:c|d|e|f|g|a)(?:\#|b){0,2})(?<octave>7)$|
+      ^(?<pitch>b\#?)(?<octave>7)$|
+      ^(?<pitch>c(?:b{1,2})?)(?<octave>8)$|
+      ^(?<pitch>[a-g](?:\#|b){0,2})$
+    /ix
 
-      self.pitch = note
-      self.octave = octave
+    DEFAULT_CENTER_OCTAVE = 4
+
+    def initialize(note)
+      matchdata = note.match(NOTE_PARSER)
+      raise UnkownNoteError, "#{note} is not a valid note" if matchdata.nil?
+
+      self.pitch = matchdata[:pitch].capitalize
+      self.octave = Integer(matchdata[:octave] || DEFAULT_CENTER_OCTAVE)
+      raise UnkownNoteError, "#{note} is not a valid note" if pitch.nil? && octave.nil?
+    end
+
+    def next
+      return self.class.new("#{pitch.next}#{octave + 1}") if pitch.match?(/^b/i)
+
+      self.class.new("#{pitch.next}#{octave}")
     end
 
     def interval_from(note)
@@ -75,9 +97,8 @@ module Musicalism
       self.class.notes_to_midi_map[pitch][octave - 1]
     end
 
-    # maybe note with same pitch but different octave could be equal-ish
-    def ==(other)
-      pitch == other.pitch && octave == other.octave
+    def <=>(other)
+      to_midi <=> other.to_midi
     end
 
     private
