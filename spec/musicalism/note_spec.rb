@@ -231,10 +231,36 @@ RSpec.describe Musicalism::Note do
   end
 
   describe '#next' do
-    let(:note) { described_class.new('A0') }
+    subject { described_class.new(note) }
 
-    it 'has the correct next note' do
-      expect(note.next).to eq(described_class.new('B0'))
+    context 'when B or E' do
+      context 'with no alteration' do
+        let(:note) { 'B0' }
+
+        it 'has the correct next note' do
+          expect(subject.next).to eq(described_class.new('C1'))
+        end
+      end
+    end
+
+    context 'when not B or E' do
+      context 'with no alterations' do
+        let(:note) { 'C1' }
+
+        it { expect(subject.next).to eq(described_class.new('C#1')) }
+      end
+
+      context 'with a sharp' do
+        let(:note) { 'F#4' }
+
+        it { expect(subject.next).to eq(described_class.new('G4')) }
+      end
+
+      context 'with a flat' do
+        let(:note) { 'Db4' }
+
+        it { expect(subject.next).to eq(described_class.new('D4')) }
+      end
     end
 
     context 'when changing octave' do
@@ -252,13 +278,112 @@ RSpec.describe Musicalism::Note do
         expect(note.next).to eq(described_class.new('B#0'))
       end
 
-      context 'when next not would require using double #' do
-        let(:note) { super().next }
+      context 'when next note needs an alteration' do
+        context 'with single sharp' do
+          let(:note) { described_class.new('C1') }
 
-        it 'has the correct next note' do
-          expect(note.next).to eq(described_class.new('C##1'))
+          it 'has the correct next note' do
+            expect(note.next).to eq(described_class.new('C#1'))
+          end
+        end
+
+        context 'with double sharps' do
+          let(:note) { described_class.new('E#') }
+
+          it 'has the correct next note' do
+            expect(note.next).to eq(described_class.new('F#'))
+            expect(note.next.next).to eq(described_class.new('G'))
+          end
         end
       end
+
+      context 'when next not would require using double #' do
+        let(:note) { described_class.new('B#0') }
+
+        it 'has the correct next note' do
+          expect(note.next).to eq(described_class.new('C#1'))
+        end
+      end
+
+      context 'when using double flats' do
+        let(:note) { described_class.new('Bbb0') }
+
+        it 'has the correct next note' do
+          expect(note.next).to eq(described_class.new('Cbb1'))
+        end
+      end
+    end
+  end
+
+  describe '.parse_note_and_alteration' do
+    specify do
+      expect(described_class.parse_note_and_alteration('A0'))
+        .to eq({ pitch: 'A', alteration: nil, octave: 0 })
+    end
+
+    specify do
+      expect(described_class.parse_note_and_alteration('B0'))
+        .to eq({ pitch: 'B', alteration: nil, octave: 0 })
+    end
+
+    specify do
+      expect(described_class.parse_note_and_alteration('Bb0'))
+        .to eq({ pitch: 'Bb', alteration: 'b', octave: 0 })
+    end
+
+    specify do
+      expect(described_class.parse_note_and_alteration('Bbb0'))
+        .to eq({ pitch: 'Bbb', alteration: 'bb', octave: 0 })
+    end
+
+    specify do
+      expect(described_class.parse_note_and_alteration('B#0'))
+        .to eq({ pitch: 'B#', alteration: '#', octave: 0 })
+    end
+
+    specify do
+      expect(described_class.parse_note_and_alteration('B##0'))
+        .to eq({ pitch: 'B##', alteration: '##', octave: 0 })
+    end
+
+    specify do
+      expect(described_class.parse_note_and_alteration('Cb3'))
+        .to eq({ pitch: 'Cb', alteration: 'b', octave: 3 })
+    end
+
+    specify do
+      expect(described_class.parse_note_and_alteration('C'))
+        .to eq(pitch: 'C', alteration: nil, octave: described_class::DEFAULT_CENTER_OCTAVE)
+    end
+
+    specify do
+      expect(described_class.parse_note_and_alteration('Fbb6'))
+        .to eq(pitch: 'Fbb', alteration: 'bb', octave: 6)
+    end
+
+    specify do
+      expect(described_class.parse_note_and_alteration('A##7'))
+        .to eq(pitch: 'A##', alteration: '##', octave: 7)
+    end
+
+    specify do
+      expect(described_class.parse_note_and_alteration('B#7'))
+        .to eq(pitch: 'B#', alteration: '#', octave: 7)
+    end
+
+    specify do
+      expect(described_class.parse_note_and_alteration('Bbb7'))
+        .to eq(pitch: 'Bbb', alteration: 'bb', octave: 7)
+    end
+
+    specify do
+      expect(described_class.parse_note_and_alteration('Cb8'))
+        .to eq(pitch: 'Cb', alteration: 'b', octave: 8)
+    end
+
+    specify do
+      expect(described_class.parse_note_and_alteration('Cbb8'))
+        .to eq(pitch: 'Cbb', alteration: 'bb', octave: 8)
     end
   end
 end

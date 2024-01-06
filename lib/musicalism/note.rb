@@ -5,7 +5,7 @@ module Musicalism
 
     class UnkownNoteError < ArgumentError; end
 
-    attr_reader :pitch, :octave
+    attr_reader :pitch, :octave, :alteration
 
     NOTES = [
       ['G##', 'A', 'Bbb'],
@@ -22,51 +22,96 @@ module Musicalism
       ['G#',  'Ab']
     ]
 
-    CIRCLE_OF_FIFTH = []
+    LOWEST_MIDI_NODE_NUMBER = 21
 
-    def self.notes_to_midi_map
-      @@notes_to_midi_map ||= begin
-        c_index = NOTES.index { |n| n.include? 'C' }
-        notes = NOTES[c_index..-1] + NOTES[0..(c_index - 1)]
-        h = {}
-        counter = 0
-        128.times do |i|
-          notes.first.each do |n|
-            h[n] ||= []
-            h[n] << i
-          end
-          notes.rotate!
-          counter += 1 if (i % 12).zero?
+    NOTE_PARTS = %i[pitch octave alteration]
+    class << self
+      def parse_note_and_alteration(string)
+        matchdata = string.match(NOTE_PARSER)
+        raise UnkownNoteError, "#{string} is not a valid note" if matchdata.nil?
+
+        Hash[NOTE_PARTS.zip(matchdata.values_at(*NOTE_PARTS))].tap do |parts|
+          parts[:pitch].capitalize!
+          parts[:alteration] = nil if parts[:alteration] == ''
+          parts[:octave] = Integer(parts[:octave] || DEFAULT_CENTER_OCTAVE)
         end
+      end
 
-        h.freeze
+      def notes_to_midi_map
+        @@notes_to_midi_map ||= begin
+          c_index = NOTES.index { |n| n.include? 'C' }
+          notes = NOTES[c_index..-1] + NOTES[0..(c_index - 1)]
+          h = {}
+          counter = 0
+          128.times do |i|
+            notes.first.each do |n|
+              h[n] ||= []
+              h[n] << i
+            end
+            notes.rotate!
+            counter += 1 if (i % 12).zero?
+          end
+
+          h.freeze
+        end
+      end
+
+      def each(&block)
+        note = new('A0')
+        (LOWEST_MIDI_NODE_NUMBER..128).each do |midi_note_number|
+          pp midi_note_number
+          block.call(note)
+          note = note.next
+        end
       end
     end
 
     NOTE_PARSER = /
-      ^(?<pitch>(?:(?:a|b)\#{0,2}|(?:bb{0,2})))(?<octave>0)$|
-      ^(?<pitch>[a-g](?:\#|b){0,2})(?<octave>[1-6])$|
-      ^(?<pitch>(?:c|d|e|f|g|a)(?:\#|b){0,2})(?<octave>7)$|
-      ^(?<pitch>b\#?)(?<octave>7)$|
-      ^(?<pitch>c(?:b{1,2})?)(?<octave>8)$|
-      ^(?<pitch>[a-g](?:\#|b){0,2})$
+      ^(?<pitch>a(?<alteration>\#{0,2}))(?<octave>0)$|
+      ^(?<pitch>b(?<alteration>[\#b]{0,2}))(?<octave>0)$|
+      ^(?<pitch>[a-g](?<alteration>[\#b]{0,2}))(?<octave>[1-6])$|
+      ^(?<pitch>(?:[cdefga])(?<alteration>[\#b]{0,2}))(?<octave>7)$|
+      ^(?<pitch>b(?<alteration>\#)?)(?<octave>7)$|
+      ^(?<pitch>b(?<alteration>b{1,2}?))(?<octave>7)$|
+      ^(?<pitch>c(?<alteration>b{1,2})?)(?<octave>8)$|
+      ^(?<pitch>[a-g](?<alteration>\#|b){0,2})$
     /ix
 
     DEFAULT_CENTER_OCTAVE = 4
 
     def initialize(note)
-      matchdata = note.match(NOTE_PARSER)
-      raise UnkownNoteError, "#{note} is not a valid note" if matchdata.nil?
-
-      self.pitch = matchdata[:pitch].capitalize
-      self.octave = Integer(matchdata[:octave] || DEFAULT_CENTER_OCTAVE)
-      raise UnkownNoteError, "#{note} is not a valid note" if pitch.nil? && octave.nil?
+      parsed_note_info = self.class.parse_note_and_alteration(note)
+      self.pitch      = parsed_note_info[:pitch]
+      self.octave     = parsed_note_info[:octave]
+      self.alteration = parsed_note_info[:alteration]
+      # raise UnkownNoteError, "#{note} is not a valid note" if pitch.nil? && octave.nil?
     end
 
     def next
-      return self.class.new("#{pitch.next}#{octave + 1}") if pitch.match?(/^b/i)
+      next_octave = octave
+      matchdata = pitch.match(/^(?<p>[abcedfg])(?<alteration>#?)$/i)
+      # matchdata ||= pitch.match(/^(?:[be])(?<alteration>#?)$/i)
+      # alteration = matchdata && matchdata[:alteration]
 
-      self.class.new("#{pitch.next}#{octave}")
+      next_pitch_base = if matchdata && !alteration&.empty?
+                          "#{pitch[0].next}"
+                        else
+                          "#{pitch[0]}"
+                        end
+      next_pitch = next_pitch_base
+
+      next_octave += 1 if next_pitch_base.match?(/^c$/i)
+
+      self.class.new("#{next_pitch}#{next_octave}")
+    end
+
+    def alteration
+      @alteration ||= begin
+        matchdata = pitch.match(/^[a-b](?<alteration>(?:\#|b){0,2})/i)
+        return if matchdata.nil?
+
+        matchdata[:alteration]
+      end
     end
 
     def interval_from(note)
@@ -103,7 +148,7 @@ module Musicalism
 
     private
 
-    attr_writer :pitch, :octave
+    attr_writer :pitch, :octave, :alteration
 
     def note?(note)
       NOTES.flatten.include?(note)
@@ -111,6 +156,10 @@ module Musicalism
 
     def pitch_index
       NOTES.index { |a| a.include?(pitch) }
+    end
+
+    def next_pitch_changes_octave?
+      pitch[0].match?(/^b$/i)
     end
 
     notes_to_midi_map
