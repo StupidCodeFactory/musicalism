@@ -116,6 +116,24 @@ module Musicalism
       voice_leading ? Chord.voice_lead(progression) : progression
     end
 
+    def tonicize(numeral)
+      local_tonic_chord = chord(numeral)
+      unless MODES.include?(local_tonic_chord.quality)
+        raise ArgumentError, "#{numeral} in #{self} is a #{local_tonic_chord.quality} chord, it cannot be a local tonic"
+      end
+
+      Key.new(local_tonic_chord.root, local_tonic_chord.quality)
+    end
+
+    def secondary_dominant(numeral)
+      tonicize(numeral).chord(:V)
+    end
+
+    def two_five(numeral)
+      local_key = tonicize(numeral)
+      [local_key.chord(:ii), local_key.chord(:V)]
+    end
+
     def simplest_spelling
       enharmonic_spellings.min_by { |key| key.signature.size }
     end

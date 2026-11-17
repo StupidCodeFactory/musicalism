@@ -398,6 +398,46 @@ RSpec.describe Musicalism::Key do
     end
   end
 
+  describe '#tonicize' do
+    {
+      ['C major', :ii] => 'D minor',
+      ['C major', :V] => 'G major',
+      ['C major', :IV] => 'F major',
+      ['A minor', :V] => 'E major',
+      ['A minor', :iv] => 'D minor'
+    }.each do |(name, numeral), local_key|
+      it "makes #{numeral} of #{name} the local key #{local_key}" do
+        expect(described_class[name].tonicize(numeral)).to eq(described_class[local_key])
+      end
+    end
+
+    it 'keeps the octave of the chord root' do
+      expect(described_class.major('C').tonicize(:ii).tonic).to have_attributes(pitch: 'D', octave: 4)
+    end
+
+    it 'refuses a diminished degree' do
+      expect { described_class.major('C').tonicize(:vii) }
+        .to raise_error(ArgumentError, 'vii in C major is a diminished chord, it cannot be a local tonic')
+    end
+  end
+
+  describe '#secondary_dominant' do
+    it 'is the dominant chord of the key on that degree' do
+      expect(%i[V ii vi].map { |numeral| described_class.major('C').secondary_dominant(numeral).to_s })
+        .to eq(['D major', 'A major', 'E major'])
+    end
+  end
+
+  describe '#two_five' do
+    it 'leads to a major degree with a minor ii and a major V' do
+      expect(described_class.major('C').two_five(:IV).map(&:to_s)).to eq(['G minor', 'C major'])
+    end
+
+    it 'leads to a minor degree with a diminished ii and a major V' do
+      expect(described_class.major('C').two_five(:ii).map(&:to_s)).to eq(['E diminished', 'A major'])
+    end
+  end
+
   describe '#chords' do
     it 'lists the seven diatonic triads of a major key' do
       expect(described_class.major('C').chords).to eq(

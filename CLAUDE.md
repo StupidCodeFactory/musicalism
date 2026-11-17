@@ -71,6 +71,10 @@ musicalism answers questions about the graph. It never decides where to go: walk
 - `path_to(destination, random:)` picks one shortest path at random (seed it to repeat). It starts with the key itself and ends with the destination as spelled by the caller.
 - `modulate_through(keys)` chains `modulate_to` along the keys, sharing the I chord between two hops, voice-led unless `voice_leading: false`. Each hop respells the next key to share the most chords with the current one, so crossing the enharmonic seam (F# major to Db major) still goes through a pivot. Pass `key.path_to(destination)` to reach a distant key smoothly.
 
+### Micro modulations (`Key#tonicize`, `#secondary_dominant`, `#two_five`)
+
+Short tonicizations that leave the key itself unchanged. `tonicize(:ii)` returns the local key built on that degree's chord (D minor in C major, keeping the chord root's octave). Its mode comes from the chord quality, so in minor keys V tonicizes the harmonic-minor major chord. A diminished or augmented degree raises `ArgumentError`. `secondary_dominant(numeral)` is that local key's V (V/V in C is D major), and `two_five(numeral)` its ii and V (a minor target gets ii°).
+
 ### Modulation (`Key#pivot_chords`, `Key#modulate_to`, `lib/musicalism/pivot.rb`)
 
 - Both methods accept a `Key` or a name (`'G major'`) through `Key.coerce`.
