@@ -1,4 +1,3 @@
-require 'debug'
 module Musicalism
   class Note
     include Comparable
@@ -22,7 +21,13 @@ module Musicalism
       ['G#',  'Ab']
     ]
 
-    LOWEST_MIDI_NODE_NUMBER = 21
+    LOWEST_MIDI_NOTE_NUMBER = 21
+    HIGHEST_MIDI_NOTE_NUMBER = 108
+    MIDI_NUMBER_OF_C0 = 12
+    SEMITONES_PER_OCTAVE = 12
+    NATURAL_SEMITONES_FROM_C = { 'C' => 0, 'D' => 2, 'E' => 4, 'F' => 5, 'G' => 7, 'A' => 9, 'B' => 11 }.freeze
+    ALTERATION_SEMITONES = { '#' => 1, 'b' => -1 }.freeze
+    SPELLINGS_FROM_C = NOTES.rotate(NOTES.index { |spellings| spellings.include?('C') }).freeze
 
     NOTE_PARTS = %i[pitch octave alteration]
     class << self
@@ -37,32 +42,20 @@ module Musicalism
         end
       end
 
-      def notes_to_midi_map
-        @@notes_to_midi_map ||= begin
-          c_index = NOTES.index { |n| n.include? 'C' }
-          notes = NOTES[c_index..-1] + NOTES[0..(c_index - 1)]
-          h = {}
-          counter = 0
-          128.times do |i|
-            notes.first.each do |n|
-              h[n] ||= []
-              h[n] << i
-            end
-            notes.rotate!
-            counter += 1 if (i % 12).zero?
-          end
-
-          h.freeze
-        end
+      def each
+        (LOWEST_MIDI_NOTE_NUMBER..HIGHEST_MIDI_NOTE_NUMBER).each { |midi_number| yield from_midi(midi_number) }
       end
 
-      def each(&block)
-        note = new('A0')
-        (LOWEST_MIDI_NODE_NUMBER..128).each do |midi_note_number|
-          pp midi_note_number
-          block.call(note)
-          note = note.next
-        end
+      def from_midi(midi_number)
+        octave, pitch_class = (midi_number - MIDI_NUMBER_OF_C0).divmod(SEMITONES_PER_OCTAVE)
+        new("#{natural_or_sharp_spelling(SPELLINGS_FROM_C[pitch_class])}#{octave}")
+      end
+
+      private
+
+      def natural_or_sharp_spelling(spellings)
+        spellings.find { |name| name.match?(/\A[A-G]\z/) } ||
+          spellings.find { |name| name.match?(/\A[A-G]#\z/) }
       end
     end
 
@@ -74,44 +67,28 @@ module Musicalism
       ^(?<pitch>b(?<alteration>\#)?)(?<octave>7)$|
       ^(?<pitch>b(?<alteration>b{1,2}?))(?<octave>7)$|
       ^(?<pitch>c(?<alteration>b{1,2})?)(?<octave>8)$|
-      ^(?<pitch>[a-g](?<alteration>\#|b){0,2})$
+      ^(?<pitch>[a-g](?<alteration>[\#b]{0,2}))$
     /ix
 
     DEFAULT_CENTER_OCTAVE = 4
 
-    def initialize(note)
-      parsed_note_info = self.class.parse_note_and_alteration(note)
+    def initialize(note, octave = nil)
+      parsed_note_info = self.class.parse_note_and_alteration("#{note}#{octave}")
       self.pitch      = parsed_note_info[:pitch]
       self.octave     = parsed_note_info[:octave]
       self.alteration = parsed_note_info[:alteration]
-      # raise UnkownNoteError, "#{note} is not a valid note" if pitch.nil? && octave.nil?
     end
 
     def next
-      next_octave = octave
-      matchdata = pitch.match(/^(?<p>[abcedfg])(?<alteration>#?)$/i)
-      # matchdata ||= pitch.match(/^(?:[be])(?<alteration>#?)$/i)
-      # alteration = matchdata && matchdata[:alteration]
-
-      next_pitch_base = if matchdata && !alteration&.empty?
-                          "#{pitch[0].next}"
-                        else
-                          "#{pitch[0]}"
-                        end
-      next_pitch = next_pitch_base
-
-      next_octave += 1 if next_pitch_base.match?(/^c$/i)
-
-      self.class.new("#{next_pitch}#{next_octave}")
+      self.class.from_midi(to_midi + 1)
     end
 
-    def alteration
-      @alteration ||= begin
-        matchdata = pitch.match(/^[a-b](?<alteration>(?:\#|b){0,2})/i)
-        return if matchdata.nil?
+    def letter
+      pitch[0]
+    end
 
-        matchdata[:alteration]
-      end
+    def up_an_octave
+      self.class.new(pitch, octave + 1)
     end
 
     def interval_from(note)
@@ -139,7 +116,7 @@ module Musicalism
     end
 
     def to_midi
-      self.class.notes_to_midi_map[pitch][octave - 1]
+      MIDI_NUMBER_OF_C0 + (octave * SEMITONES_PER_OCTAVE) + semitones_above_c
     end
 
     def <=>(other)
@@ -158,10 +135,12 @@ module Musicalism
       NOTES.index { |a| a.include?(pitch) }
     end
 
-    def next_pitch_changes_octave?
-      pitch[0].match?(/^b$/i)
+    def semitones_above_c
+      NATURAL_SEMITONES_FROM_C.fetch(letter) + alteration_semitones
     end
 
-    notes_to_midi_map
+    def alteration_semitones
+      pitch[1..].each_char.sum { |sign| ALTERATION_SEMITONES.fetch(sign) }
+    end
   end
 end

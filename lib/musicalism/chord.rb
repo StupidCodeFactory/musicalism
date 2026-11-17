@@ -9,11 +9,11 @@ module Musicalism
     end
 
     def inverse(depth)
-      self.class.new @notes.rotate(depth)
+      self.class.new(@notes.dup, inversion: depth)
     end
 
     def inverse!(depth)
-      @notes.rotate! depth
+      depth.times { @notes.push(@notes.shift.up_an_octave) }
     end
 
     def ==(other)

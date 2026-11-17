@@ -8,6 +8,18 @@ RSpec.describe Musicalism::Note do
   end
 
   describe '#initialize' do
+    context 'when given the pitch and the octave as separate arguments' do
+      subject { described_class.new('Eb', 5) }
+
+      it { is_expected.to have_attributes(pitch: 'Eb', octave: 5, alteration: 'b') }
+    end
+
+    context 'when given a natural pitch' do
+      it 'has no alteration whatever the letter' do
+        expect(%w[A B C].map { |pitch| described_class.new(pitch).alteration }).to all(be_nil)
+      end
+    end
+
     context 'when no octave given' do
       let(:note) { described_class.new(pitch) }
 
@@ -227,7 +239,7 @@ RSpec.describe Musicalism::Note do
   describe '#to_midi' do
     subject(:note) { described_class.new 'E##3' }
 
-    its(:to_midi) { should eq(52) }
+    its(:to_midi) { should eq(54) }
   end
 
   describe '#next' do
@@ -275,7 +287,7 @@ RSpec.describe Musicalism::Note do
       let(:note) { described_class.new('A#0') }
 
       it 'has the correct next note' do
-        expect(note.next).to eq(described_class.new('B#0'))
+        expect(note.next).to eq(described_class.new('B0'))
       end
 
       context 'when next note needs an alteration' do
@@ -312,6 +324,12 @@ RSpec.describe Musicalism::Note do
           expect(note.next).to eq(described_class.new('Cbb1'))
         end
       end
+    end
+  end
+
+  describe '.each' do
+    it 'yields every piano note from A0 to C8' do
+      expect(described_class.enum_for(:each).map(&:to_midi)).to eq((21..108).to_a)
     end
   end
 
@@ -354,6 +372,11 @@ RSpec.describe Musicalism::Note do
     specify do
       expect(described_class.parse_note_and_alteration('C'))
         .to eq(pitch: 'C', alteration: nil, octave: described_class::DEFAULT_CENTER_OCTAVE)
+    end
+
+    specify do
+      expect(described_class.parse_note_and_alteration('Ebb'))
+        .to eq(pitch: 'Ebb', alteration: 'bb', octave: described_class::DEFAULT_CENTER_OCTAVE)
     end
 
     specify do

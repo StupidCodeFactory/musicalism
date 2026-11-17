@@ -1,11 +1,9 @@
 module Musicalism
-  class Harmonic
-    def sixth
-      @interval_generator.major_sixth
-    end
+  class HarmonicMinorScale < MinorScale
+    private
 
-    def seventh
-      @interval_generator.major_seventh
+    def scale_structure
+      super[0..-2] + [interval_generator.major_seventh]
     end
   end
 end

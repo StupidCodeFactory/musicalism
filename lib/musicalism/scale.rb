@@ -1,6 +1,6 @@
 module Musicalism
   class Scale
-    attr_reader :alterations, :root_note, :interval_generator
+    attr_reader :root_note, :interval_generator
 
     DEGREES = %i[
       tonic
@@ -12,75 +12,72 @@ module Musicalism
       subtonic
     ].freeze
 
+    LETTERS = %w[C D E F G A B].freeze
+    ORDER_OF_SHARPS = %w[F C G D A E B].freeze
+    ORDER_OF_FLATS = ORDER_OF_SHARPS.reverse.freeze
+
     def initialize(root_note)
       @root_note = root_note.is_a?(Note) ? root_note : Note.new(root_note)
       @interval_generator = Interval.new
-      @alterations = []
-      calcuate_alterations
     end
 
-    # TODO: cache this mofos!
     def tonic_chord(options = {})
-      @tonic_chord ||= Chord.new(tertian_from(:tonic), options)
+      degree_chord(:tonic, options)
     end
 
     def supertonic_chord(options = {})
-      @supertonic_chord ||= Chord.new tertian_from(:supertonic), options
+      degree_chord(:supertonic, options)
     end
 
     def mediant_chord(options = {})
-      @mediant_chord ||= Chord.new tertian_from(:mediant), options
+      degree_chord(:mediant, options)
     end
 
     def subdominante_chord(options = {})
-      @subdominante_chord ||= Chord.new tertian_from(:subdominant), options
+      degree_chord(:subdominant, options)
     end
 
     def dominante_chord(options = {})
-      @dominante_chord ||= Chord.new tertian_from(:dominant), options
+      degree_chord(:dominant, options)
     end
 
     def submediant_chord(options = {})
-      @submediant_chord ||= Chord.new tertian_from(:submediant), options
+      degree_chord(:submediant, options)
     end
 
     def subtonic_chord(options = {})
-      @subtonic_chord ||= Chord.new tertian_from(:subtonic), options
+      degree_chord(:subtonic, options)
     end
 
     def notes
-      @notes ||= @scale_structure.inject [@root_note] do |scale, interval|
-        scale << @root_note.transpose(interval).detect do |n|
-          next_pitch = scale[-1].pitch.gsub(/#|b/, '').next
-          next_pitch = 'A' if next_pitch > 'G'
-          n.pitch =~ /#{next_pitch}/
-        end
+      @notes ||= scale_structure.each_with_object([root_note]) do |semitones_from_root, scale|
+        scale << next_degree_note(scale.last, semitones_from_root)
       end
     end
 
-    def calcuate_alterations
-      scale = Musicalism::Note::NOTES.rotate 3
-      fifth_circle_index = 0
-      loop do
-        break if scale.first.include? @root_note.pitch
-
-        fifth_circle_index += 1
-        scale = scale.rotate 7
-      end
-
-      scale = Musicalism::Note::NOTES.rotate 9
-      1.upto(fifth_circle_index) do |_variable|
-        @alterations << scale.first
-        scale = scale.rotate 7
-      end
+    def alterations
+      flats, sharps = notes.map(&:pitch).select { |pitch| pitch.length > 1 }.partition { |pitch| pitch.end_with?('b') }
+      flats.sort_by { |pitch| ORDER_OF_FLATS.index(pitch[0]) } + sharps.sort_by { |pitch| ORDER_OF_SHARPS.index(pitch[0]) }
     end
 
     private
 
-    def tertian_from(degree)
-      [0, 2, 4].each_with_object([]) do |i, chord_notes|
-        chord_notes << notes.rotate(DEGREES.index(degree)).rotate(i).first
-      end
+    def degree_chord(degree, options)
+      Chord.new(tertian_from(DEGREES.index(degree)), options)
+    end
+
+    def tertian_from(degree_index)
+      notes_over_two_octaves.values_at(degree_index, degree_index + 2, degree_index + 4)
+    end
+
+    def notes_over_two_octaves
+      notes + notes.map(&:up_an_octave)
+    end
+
+    def next_degree_note(previous_note, semitones_from_root)
+      letter = LETTERS[(LETTERS.index(previous_note.letter) + 1) % LETTERS.size]
+      pitch = root_note.transpose(semitones_from_root).map(&:pitch).find { |spelling| spelling.start_with?(letter) }
+      Note.new(pitch, letter == 'C' ? previous_note.octave + 1 : previous_note.octave)
     end
   end
 end
