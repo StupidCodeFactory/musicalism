@@ -47,6 +47,8 @@ Instance methods that return semitone counts (`major_third` gives 4). Enharmonic
 
 Wraps an ordered array of `Note`s. Each inversion step moves the lowest note up an octave. `==` compares the note arrays. `to_midi` returns the MIDI numbers, ready for rcoremidi note-ons. `quality`, `root` and `to_s` ("A minor") recognise triads in any inversion by trying each rotation. They return `nil` (or the plain pitches) when the notes are not a triad.
 
+`voiced_near(previous)` returns the same chord in the inversion and octave (within two octaves either way) whose notes move the fewest semitones from `previous`. Voicings outside A0..C8 are skipped. `Chord.voice_lead(chords)` applies that along a progression, keeping the first chord as given.
+
 ### Key (`lib/musicalism/key.rb`)
 
 This is the API rcoremidi should use, so keep it readable. `Scale` is the lower layer underneath it.
@@ -63,11 +65,11 @@ This is the API rcoremidi should use, so keep it readable. `Scale` is the lower 
 
 - Both methods accept a `Key` or a name (`'G major'`) through `Key.coerce`.
 - `pivot_chords(destination)` returns `Pivot` values (`chord`, `from_numeral`, `to_numeral`, and `to_s` like `"A minor: vi in C major = ii in G major"`) for the chords both keys spell the same way. Enharmonic matches do not count. Order: chords that are IV, ii or vi in the new key come first, then chords that are tonic in neither key, then chords that are I in either key.
-- `modulate_to(destination, via:, random:)` returns the chords I, pivot, V of the new key, I of the new key.
+- `modulate_to(destination, via:, random:, voice_leading:)` returns the chords I, pivot, V of the new key, I of the new key.
   - By default the pivot is drawn at random from the shared chords that are tonic in neither key, so repeated calls vary. Pass `random: Random.new(seed)` to repeat a choice.
   - `via:` picks the pivot yourself: either a numeral in the key you leave (`via: :vi`, any case) or a `Pivot` from `pivot_chords`. Only `via:` can use a tonic chord as the pivot.
   - With no usable pivot, the progression goes straight from I to V and I of the new key.
-  - Each chord keeps the octave of its own key. There is no voice leading yet.
+  - The chords are voice-led from the opening I (C4 E4 G4, C4 E4 A4, D4 F#4 A4, D4 G4 B4 for C to G via vi). `voice_leading: false` returns every chord in root position in its own key's octave. rcoremidi's `Clip#modulate` passes `voice_leading:` through and its specs pin the voice-led chords, so change both repos together.
 
 ## Specs
 

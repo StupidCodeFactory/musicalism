@@ -247,8 +247,13 @@ RSpec.describe Musicalism::Key do
       expect(c_major.modulate_to('F# major').map(&:to_s)).to eq(['C major', 'C# major', 'F# major'])
     end
 
-    it 'gives chords ready to play' do
+    it 'voice-leads the chords so each one moves as little as possible' do
       expect(c_major.modulate_to(described_class.major('G'), via: :vi).map(&:to_midi))
+        .to eq([[60, 64, 67], [60, 64, 69], [62, 66, 69], [62, 67, 71]])
+    end
+
+    it 'keeps every chord in root position in its own key without voice leading' do
+      expect(c_major.modulate_to('G major', via: :vi, voice_leading: false).map(&:to_midi))
         .to eq([[60, 64, 67], [69, 72, 76], [74, 78, 81], [67, 71, 74]])
     end
   end

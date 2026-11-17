@@ -100,10 +100,11 @@ module Musicalism
       shared_chords_with(destination).sort_by.with_index { |pivot, position| [pivot_rank(pivot), position] }
     end
 
-    def modulate_to(destination, via: nil, random: Random)
+    def modulate_to(destination, via: nil, random: Random, voice_leading: true)
       destination = Key.coerce(destination)
       pivot = via ? chosen_pivot(destination, via) : random_pivot(destination, random)
-      [chord(:I), pivot&.chord, destination.chord(:V), destination.chord(:I)].compact
+      progression = [chord(:I), pivot&.chord, destination.chord(:V), destination.chord(:I)].compact
+      voice_leading ? Chord.voice_lead(progression) : progression
     end
 
     def ==(other)
