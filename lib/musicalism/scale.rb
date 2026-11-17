@@ -21,34 +21,6 @@ module Musicalism
       @interval_generator = Interval.new
     end
 
-    def tonic_chord(options = {})
-      degree_chord(:tonic, options)
-    end
-
-    def supertonic_chord(options = {})
-      degree_chord(:supertonic, options)
-    end
-
-    def mediant_chord(options = {})
-      degree_chord(:mediant, options)
-    end
-
-    def subdominante_chord(options = {})
-      degree_chord(:subdominant, options)
-    end
-
-    def dominante_chord(options = {})
-      degree_chord(:dominant, options)
-    end
-
-    def submediant_chord(options = {})
-      degree_chord(:submediant, options)
-    end
-
-    def subtonic_chord(options = {})
-      degree_chord(:subtonic, options)
-    end
-
     def notes
       @notes ||= scale_structure.each_with_object([root_note]) do |semitones_from_root, scale|
         scale << next_degree_note(scale.last, semitones_from_root)

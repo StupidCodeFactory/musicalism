@@ -41,7 +41,7 @@ Instance methods that return semitone counts (`major_third` gives 4). Enharmonic
 - Each subclass defines a private `scale_structure`: the six semitone distances from the root. `HarmonicMinorScale` and `MelodicMinorScale` (ascending form) subclass `MinorScale` and replace the last intervals. `Scale` itself has no structure, so do not instantiate it directly.
 - `notes` gives each degree the next letter name, picked from the enharmonic options `transpose` returns. That is why `MajorScale.new("E#")` spells with `C##`. The octave goes up when the letter reaches C, so notes always rise from the root (`G4 .. F#5`).
 - `alterations` lists the altered pitches of the scale in key-signature order: flats B E A D G C F, then sharps F C G D A E B. For harmonic and melodic minor it includes the raised degrees, so it is not a key signature for those.
-- Degree chords (`tonic_chord` .. `subtonic_chord`) stack thirds over the scale laid out across two octaves, so every triad rises from its root. Some method names use the French spelling (`subdominante_chord`, `dominante_chord`).
+- `degree_chord(degree, inversion:)` takes a name from `Scale::DEGREES` (`:tonic` .. `:subtonic`) and stacks thirds over the scale laid out across two octaves, so every triad rises from its root.
 
 ### Chord (`lib/musicalism/chord.rb`)
 
