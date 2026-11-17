@@ -91,6 +91,10 @@ module Musicalism
       self.class.new(pitch, octave + 1)
     end
 
+    def down_an_octave
+      self.class.new(pitch, octave - 1)
+    end
+
     def interval_from(note)
       target_index = NOTES.index { |a| a.include?(note.pitch) }
       self_index = NOTES.index { |a| a.include?(pitch) }

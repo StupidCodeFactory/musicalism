@@ -2,6 +2,7 @@ require 'musicalism/interval'
 require 'musicalism/note'
 require 'musicalism/chord'
 require 'musicalism/scale'
+require 'musicalism/key'
 require 'musicalism/version'
 
 module Musicalism

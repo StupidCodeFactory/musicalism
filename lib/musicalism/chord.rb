@@ -16,6 +16,10 @@ module Musicalism
       depth.times { @notes.push(@notes.shift.up_an_octave) }
     end
 
+    def to_midi
+      notes.map(&:to_midi)
+    end
+
     def ==(other)
       @notes == other.notes
     end

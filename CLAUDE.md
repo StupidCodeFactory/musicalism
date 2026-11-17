@@ -45,7 +45,18 @@ Instance methods that return semitone counts (`major_third` gives 4). Enharmonic
 
 ### Chord (`lib/musicalism/chord.rb`)
 
-Wraps an ordered array of `Note`s. Each inversion step moves the lowest note up an octave. `==` compares the note arrays.
+Wraps an ordered array of `Note`s. Each inversion step moves the lowest note up an octave. `==` compares the note arrays. `to_midi` returns the MIDI numbers, ready for rcoremidi note-ons.
+
+### Key (`lib/musicalism/key.rb`)
+
+This is the API rcoremidi should use, so keep it readable. `Scale` is the lower layer underneath it.
+
+- Build with `Key.major('C')`, `Key.minor('A')` or `Key['F# minor']`. Equality compares tonic spelling and mode, not octave, so `Db major` is not `C# major`.
+- `chord(numeral, inversion:)` takes `:I`..`:VII` in any case. In minor keys, V and vii° come from harmonic minor (E major in A minor). Every other degree comes from natural minor.
+- `chords(function)` groups chords by harmonic function, primary chord first: tonic I vi iii, subdominant IV ii vi, dominant V vii°. With no argument it returns all seven triads.
+- `dominant_key` / `subdominant_key` are the neighbouring keys on the circle of fifths. They are not chord functions. The tonic keeps its octave number, so walking the circle never leaves the MIDI range.
+- `relative` puts the relative minor a minor third below (C4 major gives A3 minor), so `relative.relative` returns the same octave.
+- `note(degree)` counts from 1. Degrees past 7 go into the next octaves.
 
 ## Specs
 

@@ -60,11 +60,11 @@ module Musicalism
       flats.sort_by { |pitch| ORDER_OF_FLATS.index(pitch[0]) } + sharps.sort_by { |pitch| ORDER_OF_SHARPS.index(pitch[0]) }
     end
 
-    private
-
-    def degree_chord(degree, options)
+    def degree_chord(degree, options = {})
       Chord.new(tertian_from(DEGREES.index(degree)), options)
     end
+
+    private
 
     def tertian_from(degree_index)
       notes_over_two_octaves.values_at(degree_index, degree_index + 2, degree_index + 4)
