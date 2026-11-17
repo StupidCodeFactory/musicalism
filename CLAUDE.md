@@ -61,6 +61,16 @@ This is the API rcoremidi should use, so keep it readable. `Scale` is the lower 
 - `note(degree)` counts from 1. Degrees past 7 go into the next octaves.
 - `numerals` writes each degree in the case that matches its chord quality (`:I, :ii, ... :vii`). `chord` accepts them back in any case.
 
+### Key graph (`Key#closely_related`, `#distance_to`, `#path_to`, `#modulate_through`)
+
+musicalism answers questions about the graph. It never decides where to go: walking it (arpeggiator modes, direction, bars) belongs to rcoremidi.
+
+- A step is a modulation to the dominant, subdominant or relative key. `closely_related` returns those three, respelled with `simplest_spelling` (fewest accidentals in the signature; a tie keeps the current spelling, so F# stays F#) and with the tonic octave number of the starting key, so long walks never drift out of range.
+- The graph compares keys by pitch class and mode (protected `enharmonic_to?`). `Key#==` still compares spelling.
+- `distance_to`, `keys_at(distance)` and `farthest_distance` come from a breadth-first search over all 24 keys, recomputed on each call. From C major, F# is at 6 and the farthest minor keys at 7.
+- `path_to(destination, random:)` picks one shortest path at random (seed it to repeat). It starts with the key itself and ends with the destination as spelled by the caller.
+- `modulate_through(keys)` chains `modulate_to` along the keys, sharing the I chord between two hops, voice-led unless `voice_leading: false`. Each hop respells the next key to share the most chords with the current one, so crossing the enharmonic seam (F# major to Db major) still goes through a pivot. Pass `key.path_to(destination)` to reach a distant key smoothly.
+
 ### Modulation (`Key#pivot_chords`, `Key#modulate_to`, `lib/musicalism/pivot.rb`)
 
 - Both methods accept a `Key` or a name (`'G major'`) through `Key.coerce`.

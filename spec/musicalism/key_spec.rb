@@ -258,6 +258,146 @@ RSpec.describe Musicalism::Key do
     end
   end
 
+  describe '#simplest_spelling' do
+    {
+      described_class.major('C#') => described_class.major('Db'),
+      described_class.minor('A#') => described_class.minor('Bb'),
+      described_class.major('Cb') => described_class.major('B'),
+      described_class.major('F#') => described_class.major('F#'),
+      described_class.major('Gb') => described_class.major('Gb')
+    }.each do |key, spelling|
+      it "spells #{key} as #{spelling}" do
+        expect(key.simplest_spelling).to eq(spelling)
+      end
+    end
+
+    it 'keeps the octave number of the tonic' do
+      expect(described_class.new(Musicalism::Note.new('C#3'), :major).simplest_spelling.tonic).to have_attributes(pitch: 'Db', octave: 3)
+    end
+  end
+
+  describe '#closely_related' do
+    it 'lists the dominant, subdominant and relative keys' do
+      expect(described_class.major('C').closely_related)
+        .to contain_exactly(described_class.major('G'), described_class.major('F'), described_class.minor('A'))
+    end
+
+    it 'respells a key with too many accidentals' do
+      expect(described_class.major('F#').closely_related)
+        .to contain_exactly(described_class.major('Db'), described_class.major('B'), described_class.minor('D#'))
+    end
+
+    it 'keeps every tonic in the octave of the key it starts from' do
+      expect(described_class.major('C').closely_related.map { |key| key.tonic.octave }).to all(eq(4))
+    end
+  end
+
+  describe '#distance_to' do
+    subject(:c_major) { described_class.major('C') }
+
+    {
+      'C major' => 0,
+      'G major' => 1,
+      'A minor' => 1,
+      'E minor' => 2,
+      'D major' => 2,
+      'F# major' => 6,
+      'Gb major' => 6,
+      'Eb minor' => 7
+    }.each do |name, distance|
+      it "puts #{name} #{distance} steps from C major" do
+        expect(c_major.distance_to(name)).to eq(distance)
+      end
+    end
+
+    it 'measures the same distance both ways' do
+      expect(described_class.major('F#').distance_to(c_major)).to eq(6)
+    end
+  end
+
+  describe '#keys_at and #farthest_distance' do
+    subject(:c_major) { described_class.major('C') }
+
+    it 'ranks keys by how far they are' do
+      expect(c_major.keys_at(2)).to contain_exactly(
+        described_class.major('D'), described_class.major('Bb'), described_class.minor('E'), described_class.minor('D')
+      )
+    end
+
+    it 'reaches all 24 keys' do
+      expect((0..c_major.farthest_distance).sum { |distance| c_major.keys_at(distance).size }).to eq(24)
+    end
+
+    it 'puts the farthest keys 7 steps away' do
+      expect(c_major.farthest_distance).to eq(7)
+    end
+
+    it 'has no keys past the farthest distance' do
+      expect(c_major.keys_at(8)).to be_empty
+    end
+  end
+
+  describe '#path_to' do
+    subject(:c_major) { described_class.major('C') }
+
+    let(:path) { c_major.path_to('F# major', random: Random.new(3)) }
+
+    it 'goes from the key to the destination' do
+      expect([path.first, path.last]).to eq([c_major, described_class.major('F#')])
+    end
+
+    it 'takes one of the shortest ways' do
+      expect(path.size).to eq(7)
+    end
+
+    it 'moves to a closely related key on every step' do
+      expect(path.each_cons(2).map { |from, to| from.distance_to(to) }).to all(eq(1))
+    end
+
+    it 'can take a different way with another random choice' do
+      paths = (1..20).map { |seed| c_major.path_to('E minor', random: Random.new(seed)) }
+
+      expect(paths.map { |path| path.map(&:to_s) }.uniq.size).to be > 1
+    end
+
+    it 'ends on the destination spelled as asked' do
+      expect((1..10).map { |seed| c_major.path_to('Gb major', random: Random.new(seed)).last.to_s }.uniq).to eq(['Gb major'])
+    end
+
+    it 'stays put when already there' do
+      expect(c_major.path_to('C major')).to eq([c_major])
+    end
+  end
+
+  describe '#modulate_through' do
+    subject(:c_major) { described_class.major('C') }
+
+    let(:progression) { c_major.modulate_through(c_major.path_to('D major')) }
+
+    it 'modulates to each key in turn, sharing the tonic between two hops' do
+      expect(progression.values_at(0, 2, 3, 5, 6).map(&:to_s))
+        .to eq(['C major', 'D major', 'G major', 'A major', 'D major'])
+    end
+
+    it 'goes through a pivot chord on each hop' do
+      expect(progression.values_at(1, 4).map(&:to_s)).to contain_exactly(match(/minor/), match(/minor/))
+    end
+
+    it 'voice-leads the whole progression' do
+      expect(progression.each_cons(2)).to all(satisfy { |previous, chord| chord.voiced_near(previous) == chord })
+    end
+
+    it 'finds a pivot across the enharmonic seam by respelling the next key' do
+      progression = described_class.major('F#').modulate_through(['Db major'])
+
+      expect(progression.map(&:to_s)).to match([eq('F# major'), match(/\A[DA]# minor\z/), eq('G# major'), eq('C# major')])
+    end
+
+    it 'keeps root position chords without voice leading' do
+      expect(c_major.modulate_through(['G major'], voice_leading: false).last).to eq(chord_of('G4 B4 D5'))
+    end
+  end
+
   describe '#chords' do
     it 'lists the seven diatonic triads of a major key' do
       expect(described_class.major('C').chords).to eq(

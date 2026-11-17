@@ -107,6 +107,44 @@ module Musicalism
       voice_leading ? Chord.voice_lead(progression) : progression
     end
 
+    def modulate_through(keys, random: Random, voice_leading: true)
+      stops = [self] + keys.map { |key| Key.coerce(key) }.drop_while { |key| key.enharmonic_to?(self) }
+      progression = stops.each_cons(2).with_index.flat_map do |(from, to), hop|
+        chords = from.modulate_to(from.spelling_sharing_most_chords(to), random:, voice_leading: false)
+        hop.zero? ? chords : chords.drop(1)
+      end
+      voice_leading ? Chord.voice_lead(progression) : progression
+    end
+
+    def simplest_spelling
+      enharmonic_spellings.min_by { |key| key.signature.size }
+    end
+
+    def closely_related
+      [dominant_key, subdominant_key, relative].map { |key| key.simplest_spelling.with_tonic_octave(tonic.octave) }
+    end
+
+    def distance_to(other)
+      other = Key.coerce(other)
+      keys_by_distance.index { |keys| keys.any? { |key| key.enharmonic_to?(other) } }
+    end
+
+    def keys_at(distance)
+      keys_by_distance.fetch(distance, [])
+    end
+
+    def farthest_distance
+      keys_by_distance.size - 1
+    end
+
+    def path_to(destination, random: Random)
+      destination = Key.coerce(destination)
+      distances = destination.distances_by_pitch_class_and_mode
+      path = [self]
+      path << path.last.one_step_closer(distances, random) until path.last.enharmonic_to?(destination)
+      path[0..-2] + [destination]
+    end
+
     def ==(other)
       other.is_a?(Key) && tonic.pitch == other.tonic.pitch && mode == other.mode
     end
@@ -119,7 +157,56 @@ module Musicalism
       "#<#{self.class.name} #{self}>"
     end
 
+    protected
+
+    def pitch_class_and_mode
+      [tonic.to_midi % Note::SEMITONES_PER_OCTAVE, mode]
+    end
+
+    def enharmonic_to?(other)
+      pitch_class_and_mode == other.pitch_class_and_mode
+    end
+
+    def with_tonic_octave(octave)
+      Key.new(Note.new(tonic.pitch, octave), mode)
+    end
+
+    def distances_by_pitch_class_and_mode
+      keys_by_distance.each_with_index.flat_map do |keys, distance|
+        keys.map { |key| [key.pitch_class_and_mode, distance] }
+      end.to_h
+    end
+
+    def spelling_sharing_most_chords(key)
+      key.enharmonic_spellings.max_by { |spelling| pivot_chords(spelling).size }
+    end
+
+    def enharmonic_spellings
+      [self] + tonic.transpose(0).map(&:pitch)
+                    .reject { |pitch| pitch == tonic.pitch || pitch.length > 2 }
+                    .map { |pitch| Key.new(Note.new(pitch, tonic.octave), mode) }
+    end
+
+    def one_step_closer(distances, random)
+      closely_related.select { |key| distances[key.pitch_class_and_mode] == distances[pitch_class_and_mode] - 1 }
+                     .sample(random:)
+    end
+
     private
+
+    def keys_by_distance
+      reached = Set[pitch_class_and_mode]
+      levels = [[self]]
+      loop do
+        farther = levels.last.flat_map(&:closely_related)
+                        .uniq { |key| key.pitch_class_and_mode }
+                        .reject { |key| reached.include?(key.pitch_class_and_mode) }
+        return levels if farther.empty?
+
+        reached.merge(farther.map { |key| key.pitch_class_and_mode })
+        levels << farther
+      end
+    end
 
     def shared_chords_with(destination)
       chords.zip(numerals).product(destination.chords.zip(destination.numerals))
