@@ -162,6 +162,97 @@ RSpec.describe Musicalism::Key do
     end
   end
 
+  describe '#numerals' do
+    it 'writes major chords upper case and minor or diminished chords lower case' do
+      expect([described_class.major('C').numerals, described_class.minor('A').numerals])
+        .to eq([%i[I ii iii IV V vi vii], %i[i ii III iv V VI vii]])
+    end
+  end
+
+  describe '#pivot_chords' do
+    it 'lists the chords both keys share, best pivot first' do
+      expect(described_class.major('C').pivot_chords(described_class.major('G')).map(&:to_s)).to eq(
+        [
+          'A minor: vi in C major = ii in G major',
+          'E minor: iii in C major = vi in G major',
+          'C major: I in C major = IV in G major',
+          'G major: V in C major = I in G major'
+        ]
+      )
+    end
+
+    it 'prefers a chord that is subdominant in the new key and keeps tonic chords last' do
+      expect(described_class.major('C').pivot_chords('F major').map(&:to_s)).to eq(
+        [
+          'D minor: ii in C major = vi in F major',
+          'A minor: vi in C major = iii in F major',
+          'C major: I in C major = V in F major',
+          'F major: IV in C major = I in F major'
+        ]
+      )
+    end
+
+    it 'exposes the chord and its numeral in each key' do
+      pivot = described_class.major('C').pivot_chords('G major').first
+
+      expect(pivot).to have_attributes(chord: chord_of('A4 C5 E5'), from_numeral: :vi, to_numeral: :ii)
+    end
+
+    it 'is empty when the keys share no chord' do
+      expect(described_class.major('C').pivot_chords('F# major')).to be_empty
+    end
+  end
+
+  describe '#modulate_to' do
+    let(:c_major) { described_class.major('C') }
+
+    def pivots_chosen_over_many_runs(destination)
+      Array.new(50) { |seed| c_major.modulate_to(destination, random: Random.new(seed))[1].to_s }.uniq
+    end
+
+    it 'plays I, the pivot, then V and I of the new key' do
+      expect(c_major.modulate_to('G major', via: :vi).map(&:to_s)).to eq(['C major', 'A minor', 'D major', 'G major'])
+    end
+
+    it 'varies the pivot between the chords that are tonic in neither key' do
+      expect([pivots_chosen_over_many_runs('G major'), pivots_chosen_over_many_runs('A minor')])
+        .to match([contain_exactly('A minor', 'E minor'), contain_exactly('D minor', 'B diminished', 'F major')])
+    end
+
+    it 'repeats the same choice for the same random seed' do
+      expect(c_major.modulate_to('A minor', random: Random.new(3)))
+        .to eq(c_major.modulate_to('A minor', random: Random.new(3)))
+    end
+
+    it 'skips the pivot when every shared chord is the tonic of one of the keys' do
+      expect(c_major.modulate_to('F minor').map(&:to_s)).to eq(['C major', 'C major', 'F minor'])
+    end
+
+    it 'goes through the pivot given as a numeral of the key it leaves, in any case' do
+      expect(c_major.modulate_to('G major', via: :III)[1].to_s).to eq('E minor')
+    end
+
+    it 'goes through a pivot taken from pivot_chords' do
+      pivot = c_major.pivot_chords('G major').last
+
+      expect(c_major.modulate_to('G major', via: pivot)[1].to_s).to eq('G major')
+    end
+
+    it 'refuses a pivot the new key does not share' do
+      expect { c_major.modulate_to('G major', via: :ii) }
+        .to raise_error(ArgumentError, 'ii in C major is not a chord of G major')
+    end
+
+    it 'goes straight to V and I of the new key when the keys share no chord' do
+      expect(c_major.modulate_to('F# major').map(&:to_s)).to eq(['C major', 'C# major', 'F# major'])
+    end
+
+    it 'gives chords ready to play' do
+      expect(c_major.modulate_to(described_class.major('G'), via: :vi).map(&:to_midi))
+        .to eq([[60, 64, 67], [69, 72, 76], [74, 78, 81], [67, 71, 74]])
+    end
+  end
+
   describe '#chords' do
     it 'lists the seven diatonic triads of a major key' do
       expect(described_class.major('C').chords).to eq(

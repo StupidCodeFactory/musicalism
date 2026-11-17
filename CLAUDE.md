@@ -45,7 +45,7 @@ Instance methods that return semitone counts (`major_third` gives 4). Enharmonic
 
 ### Chord (`lib/musicalism/chord.rb`)
 
-Wraps an ordered array of `Note`s. Each inversion step moves the lowest note up an octave. `==` compares the note arrays. `to_midi` returns the MIDI numbers, ready for rcoremidi note-ons.
+Wraps an ordered array of `Note`s. Each inversion step moves the lowest note up an octave. `==` compares the note arrays. `to_midi` returns the MIDI numbers, ready for rcoremidi note-ons. `quality`, `root` and `to_s` ("A minor") recognise triads in any inversion by trying each rotation. They return `nil` (or the plain pitches) when the notes are not a triad.
 
 ### Key (`lib/musicalism/key.rb`)
 
@@ -57,6 +57,17 @@ This is the API rcoremidi should use, so keep it readable. `Scale` is the lower 
 - `dominant_key` / `subdominant_key` are the neighbouring keys on the circle of fifths. They are not chord functions. The tonic keeps its octave number, so walking the circle never leaves the MIDI range.
 - `relative` puts the relative minor a minor third below (C4 major gives A3 minor), so `relative.relative` returns the same octave.
 - `note(degree)` counts from 1. Degrees past 7 go into the next octaves.
+- `numerals` writes each degree in the case that matches its chord quality (`:I, :ii, ... :vii`). `chord` accepts them back in any case.
+
+### Modulation (`Key#pivot_chords`, `Key#modulate_to`, `lib/musicalism/pivot.rb`)
+
+- Both methods accept a `Key` or a name (`'G major'`) through `Key.coerce`.
+- `pivot_chords(destination)` returns `Pivot` values (`chord`, `from_numeral`, `to_numeral`, and `to_s` like `"A minor: vi in C major = ii in G major"`) for the chords both keys spell the same way. Enharmonic matches do not count. Order: chords that are IV, ii or vi in the new key come first, then chords that are tonic in neither key, then chords that are I in either key.
+- `modulate_to(destination, via:, random:)` returns the chords I, pivot, V of the new key, I of the new key.
+  - By default the pivot is drawn at random from the shared chords that are tonic in neither key, so repeated calls vary. Pass `random: Random.new(seed)` to repeat a choice.
+  - `via:` picks the pivot yourself: either a numeral in the key you leave (`via: :vi`, any case) or a `Pivot` from `pivot_chords`. Only `via:` can use a tonic chord as the pivot.
+  - With no usable pivot, the progression goes straight from I to V and I of the new key.
+  - Each chord keeps the octave of its own key. There is no voice leading yet.
 
 ## Specs
 

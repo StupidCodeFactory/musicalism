@@ -8,6 +8,10 @@ module Musicalism
       dominant: %w[V VII]
     }.freeze
     DEGREES_FROM_HARMONIC_MINOR = %i[dominant subtonic].freeze
+    PREFERRED_PIVOT_NUMERALS = HARMONIC_FUNCTIONS[:subdominant]
+    NEUTRAL_PIVOT_RANK = PREFERRED_PIVOT_NUMERALS.size
+    TONIC_PIVOT_RANK = NEUTRAL_PIVOT_RANK + 1
+    QUALITIES_WRITTEN_UPPER_CASE = %i[major augmented].freeze
 
     attr_reader :tonic, :mode
 
@@ -18,6 +22,10 @@ module Musicalism
 
       def minor(tonic)
         new(tonic, :minor)
+      end
+
+      def coerce(key_or_name)
+        key_or_name.is_a?(Key) ? key_or_name : self[key_or_name]
       end
 
       def [](name)
@@ -81,6 +89,23 @@ module Musicalism
       numerals_for(harmonic_function).map { |numeral| chord(numeral) }
     end
 
+    def numerals
+      ROMAN_NUMERALS.zip(chords).map do |numeral, chord|
+        (QUALITIES_WRITTEN_UPPER_CASE.include?(chord.quality) ? numeral : numeral.downcase).to_sym
+      end
+    end
+
+    def pivot_chords(destination)
+      destination = Key.coerce(destination)
+      shared_chords_with(destination).sort_by.with_index { |pivot, position| [pivot_rank(pivot), position] }
+    end
+
+    def modulate_to(destination, via: nil, random: Random)
+      destination = Key.coerce(destination)
+      pivot = via ? chosen_pivot(destination, via) : random_pivot(destination, random)
+      [chord(:I), pivot&.chord, destination.chord(:V), destination.chord(:I)].compact
+    end
+
     def ==(other)
       other.is_a?(Key) && tonic.pitch == other.tonic.pitch && mode == other.mode
     end
@@ -94,6 +119,36 @@ module Musicalism
     end
 
     private
+
+    def shared_chords_with(destination)
+      chords.zip(numerals).product(destination.chords.zip(destination.numerals))
+            .filter_map do |(chord, from_numeral), (destination_chord, to_numeral)|
+        next unless chord.spelling == destination_chord.spelling
+
+        Pivot.new(chord:, from_key: self, from_numeral:, to_key: destination, to_numeral:)
+      end
+    end
+
+    def pivot_rank(pivot)
+      return TONIC_PIVOT_RANK if tonic_in_either_key?(pivot)
+
+      PREFERRED_PIVOT_NUMERALS.index(pivot.to_numeral.to_s.upcase) || NEUTRAL_PIVOT_RANK
+    end
+
+    def tonic_in_either_key?(pivot)
+      [pivot.from_numeral, pivot.to_numeral].any? { |numeral| numeral.to_s.upcase == 'I' }
+    end
+
+    def random_pivot(destination, random)
+      pivot_chords(destination).reject { |pivot| tonic_in_either_key?(pivot) }.sample(random:)
+    end
+
+    def chosen_pivot(destination, via)
+      return via if via.is_a?(Pivot)
+
+      pivot_chords(destination).find { |pivot| pivot.from_numeral.to_s.casecmp?(via.to_s) } ||
+        raise(ArgumentError, "#{via} in #{self} is not a chord of #{destination}")
+    end
 
     def neighbour_on_circle_of_fifths(note)
       Key.new(Note.new(note.pitch, tonic.octave), mode)
