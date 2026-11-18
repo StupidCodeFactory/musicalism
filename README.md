@@ -170,6 +170,22 @@ bundle exec rspec
 script/console
 ```
 
+## Releasing
+
+Versions follow [semantic versioning](https://semver.org). A push to master publishes nothing on its own. The gem is published only when a `vMAJOR.MINOR.PATCH` tag is pushed:
+
+1. Bump `Musicalism::VERSION` in `lib/musicalism/version.rb` and merge to master.
+2. Tag the merge commit on master and push the tag:
+
+   ```bash
+   git tag -a v0.2.0 -m "musicalism 0.2.0"
+   git push origin v0.2.0
+   ```
+
+The `Release gem` workflow (`.github/workflows/release.yml`) then checks that the tag matches `Musicalism::VERSION` and points at a commit on master. It runs the specs, builds the gem and pushes it to RubyGems. If any check fails, nothing is published.
+
+It authenticates with RubyGems trusted publishing, so no API key is stored in the repository. Set it up once on rubygems.org: add a trusted publisher (a pending one before the first release) for the repository `StupidCodeFactory/musicalism`, the workflow `release.yml` and the environment `rubygems`.
+
 ## License
 
 MIT, see [LICENSE](LICENSE).

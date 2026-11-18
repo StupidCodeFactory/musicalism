@@ -8,7 +8,7 @@ Gem::Specification.new do |gem|
   gem.homepage      = 'https://github.com/StupidCodeFactory/musicalism'
   gem.required_ruby_version = '>= 4.0'
 
-  gem.files         = `git ls-files`.split($\)
+  gem.files         = Dir['lib/**/*.rb', 'README.md', 'LICENSE']
   gem.executables   = gem.files.grep(%r{^bin/}).map { |f| File.basename(f) }
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.name          = 'musicalism'
