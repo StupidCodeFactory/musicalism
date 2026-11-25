@@ -6,7 +6,8 @@ Gem::Specification.new do |gem|
   gem.description   = 'Notes, scales, chords, keys, modulations and the key graph, for live coding and MIDI'
   gem.summary       = 'Music theory in plain Ruby: keys, chords and the paths between them'
   gem.homepage      = 'https://github.com/StupidCodeFactory/musicalism'
-  gem.required_ruby_version = '>= 4.0'
+  gem.required_ruby_version = '>= 3.2'
+  gem.license       = 'MIT'
 
   gem.files         = Dir['lib/**/*.rb', 'README.md', 'LICENSE']
   gem.executables   = gem.files.grep(%r{^bin/}).map { |f| File.basename(f) }

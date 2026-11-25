@@ -4,7 +4,7 @@ Music theory in plain Ruby: notes, scales, chords, keys, and the paths between k
 
 Musicalism answers harmonic questions so that a live-coding engine can play the answers. Ask it for the V chord of A minor, the pivot chord between C major and G major, or the shortest smooth route from C major to F# major. It gives back notes with octaves and MIDI numbers, ready to send as note-ons. It has no runtime dependencies, no clock and no I/O.
 
-It was written for [rcoremidi](https://github.com/StupidCodeFactory/rcoremidi), whose clips and key journeys are built on it.
+It was written for [archaeopteryx](https://github.com/StupidCodeFactory/archaeopteryx), whose clips and key journeys are built on it.
 
 ```ruby
 key = Musicalism::Key['C major']
@@ -16,10 +16,16 @@ key.modulate_to('G major', via: :vi).map(&:to_midi)
 
 ## Installation
 
-Musicalism needs Ruby 4.0 or later. It is not on RubyGems yet, so take it from GitHub:
+Musicalism needs Ruby 3.2 or later.
+
+```bash
+gem install musicalism
+```
+
+or in a Gemfile:
 
 ```ruby
-gem 'musicalism', github: 'StupidCodeFactory/musicalism', tag: 'v0.1.0'
+gem 'musicalism', '~> 0.1'
 ```
 
 ## Notes
@@ -133,7 +139,7 @@ key.modulate_through(key.path_to('D major'))
 
 `path_to` picks one of the shortest routes at random. `modulate_through` chains modulations along any list of keys, respelling enharmonic keys so that crossing from F# major to Db major still uses a pivot. `Key.major('C#').simplest_spelling` returns Db major.
 
-Musicalism never decides where to go next. Walking the graph, and choosing the direction and timing, is up to the caller, for example rcoremidi's journeys.
+Musicalism never decides where to go next. Walking the graph, and choosing the direction and timing, is up to the caller, for example archaeopteryx's journeys.
 
 ## Micro modulations
 
@@ -145,14 +151,14 @@ key.secondary_dominant(:V)     # => D major, which is V/V
 key.two_five(:IV)              # => G minor, C major: ii and V leading to F
 ```
 
-## With rcoremidi
+## With archaeopteryx
 
-rcoremidi walks the key graph like an arpeggiator whose notes are keys. Clips follow the walk bar by bar:
+archaeopteryx walks the key graph like an arpeggiator whose notes are keys. Clips follow the walk bar by bar:
 
 ```ruby
-RCoreMidi::Journey.register :voyage, from: 'C major', mode: :up_down, range: 3, rate: 4
+Archaeopteryx::Journey.register :voyage, from: 'C major', mode: :up_down, range: 3, rate: 4
 
-RCoreMidi::Clip.register :pads do
+Archaeopteryx::Clip.register :pads do
   follow :voyage do |key, step|
     chord key.chord(:I), 16, [1] + [0] * 15
     chord key.secondary_dominant(:V), 16, [0] * 12 + [1, 0, 0, 0] if step.farthest? && step.last_bar?
@@ -160,7 +166,7 @@ RCoreMidi::Clip.register :pads do
 end
 ```
 
-See rcoremidi's `script/journey_demo` for a full example.
+See archaeopteryx's `script/journey_demo` for a full example.
 
 ## Development
 

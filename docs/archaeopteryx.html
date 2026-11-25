@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Play it live — Musicalism</title>
-<meta name="description" content="rcoremidi journeys walk the musicalism key graph like an arpeggiator over keys, and clips follow them bar by bar.">
+<meta name="description" content="archaeopteryx journeys walk the musicalism key graph like an arpeggiator over keys, and clips follow them bar by bar.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -18,13 +18,13 @@
     <a href="index.html">Home</a>
     <a href="reference.html">Reference</a>
     <a href="graph.html">Key graph</a>
-    <a class="optional" href="rcoremidi.html" aria-current="page">rcoremidi</a>
+    <a class="optional" href="archaeopteryx.html" aria-current="page">archaeopteryx</a>
     <a class="optional" href="https://github.com/StupidCodeFactory/musicalism">GitHub</a>
   </nav>
 </header>
 
 <div class="layout">
-  <nav class="sidebar" aria-label="rcoremidi guide">
+  <nav class="sidebar" aria-label="archaeopteryx guide">
     <p class="nav-title">Clips</p>
     <a href="#clips">Keys in clips</a>
     <a href="#modulate">modulate</a>
@@ -41,13 +41,13 @@
 
   <main class="content">
     <p class="crumb">Guide</p>
-    <h1>Play it live with rcoremidi</h1>
-    <p><a href="https://github.com/StupidCodeFactory/rcoremidi">rcoremidi</a> is a live-coding MIDI engine for macOS. Its <code>arcx</code> daemon reloads clip files as you save them and keeps the MIDI stream in time with an external clock. Musicalism supplies the harmony: clips name keys, degrees and roman numerals, and journeys walk the key graph while the music plays.</p>
+    <h1>Play it live with archaeopteryx</h1>
+    <p><a href="https://github.com/StupidCodeFactory/archaeopteryx">archaeopteryx</a> is a live-coding MIDI engine for macOS. Its <code>arcx</code> daemon reloads clip files as you save them and keeps the MIDI stream in time with an external clock. Musicalism supplies the harmony: clips name keys, degrees and roman numerals, and journeys walk the key graph while the music plays.</p>
 
     <section id="clips">
       <h2>Keys in clips</h2>
       <p>Give a clip a key, then use scale degrees and roman numerals instead of note names.</p>
-<pre><code>RCoreMidi::Clip.register :keys do
+<pre><code>Archaeopteryx::Clip.register :keys do
   key 'A minor'
   note 5, 16, [1, 0, 0, 0] * 4          <span class="c"># the 5th degree of A minor: E5</span>
   chord :V, 16, [1] + [0] * 15          <span class="c"># E major, from harmonic minor</span>
@@ -65,7 +65,7 @@ end</code></pre>
     <section id="modulate">
       <h2>modulate</h2>
       <p>Plays the chords of <code>Key#modulate_to</code>, one per bar, then starts again. Notes and chords defined outside it play on every bar.</p>
-<pre><code>RCoreMidi::Clip.register :change do
+<pre><code>Archaeopteryx::Clip.register :change do
   key 'C major'
   modulate to: 'G major', via: :vi, rhythm: [1, 0, 1, 0] * 4
 end
@@ -76,9 +76,9 @@ end
     <section id="journeys">
       <h2>Register a journey</h2>
       <p>A journey is an arpeggiator whose notes are keys. <strong>Up</strong> moves away from home, <strong>down</strong> moves toward it, <strong>range</strong> is how far out it goes, and <strong>rate</strong> is how many bars each key lasts. At each step it takes the current key's <code>closely_related</code> keys from musicalism and picks one.</p>
-<pre><code>RCoreMidi::Journey.register :voyage, from: 'C major', mode: :up_down, range: 3, rate: 4
-RCoreMidi::Journey.register :drift,  from: 'A minor', mode: :random, rate: 2, seed: 7
-RCoreMidi::Journey.register :mine,   from: 'C major', rate: 8 do |key, candidates, home|
+<pre><code>Archaeopteryx::Journey.register :voyage, from: 'C major', mode: :up_down, range: 3, rate: 4
+Archaeopteryx::Journey.register :drift,  from: 'A minor', mode: :random, rate: 2, seed: 7
+Archaeopteryx::Journey.register :mine,   from: 'C major', rate: 8 do |key, candidates, home|
   candidates.max_by { |candidate| candidate.distance_to(home) }   <span class="c"># always farther</span>
 end</code></pre>
       <table>
@@ -117,7 +117,7 @@ end</code></pre>
     <section id="follow">
       <h2>Follow a journey</h2>
       <p><code>follow</code> runs its block once per bar, while that bar is prepared. Inside it the clip key is the journey's key, so <code>note 5</code> and <code>chord :IV</code> resolve in the key the music is in now. The block's sequences are added to the clip's fixed ones for that bar only.</p>
-<pre><code>RCoreMidi::Clip.register :pads do
+<pre><code>Archaeopteryx::Clip.register :pads do
   follow :voyage do |key, step|
     chord key.chord(:I), 16, [1] + [0] * 15
     note 1, 16, [1, 0, 0, 0] * 4
@@ -148,7 +148,7 @@ end</code></pre>
     <section id="signals">
       <h2>Reacting to the journey</h2>
       <p>The journey reports where the music is; the clip decides what to play. These come from the demo project:</p>
-<pre><code>RCoreMidi::Clip.register :drums do
+<pre><code>Archaeopteryx::Clip.register :drums do
   hats_by_distance = [[1, 0, 0, 0], [1, 0, 1, 0], [1, 1, 1, 0], [1, 1, 1, 1]]
   note 'C#2', 16, [1, 0, 0, 0] * 4
 
@@ -159,7 +159,7 @@ end</code></pre>
   end
 end
 
-RCoreMidi::Clip.register :pads do
+Archaeopteryx::Clip.register :pads do
   follow :voyage do |key, step|
     if step.first_bar? &amp;&amp; step.modulation
       step.modulation[1..-2].each_with_index do |chord_on_the_way, half|      <span class="c"># pivot and V</span>
@@ -186,8 +186,8 @@ end</code></pre>
 
     <section id="demo">
       <h2>Journey demo</h2>
-      <p>rcoremidi ships <code>script/journey_demo</code>, a small arcx project with drums, bass and pads following an <code>:up_down</code> journey from C major, three steps out and back, four bars per key.</p>
-<pre><code>cd rcoremidi/script/journey_demo
+      <p>archaeopteryx ships <code>script/journey_demo</code>, a small arcx project with drums, bass and pads following an <code>:up_down</code> journey from C major, three steps out and back, four bars per key.</p>
+<pre><code>cd archaeopteryx/script/journey_demo
 RUBYLIB=../../lib ruby bin/arcx start</code></pre>
       <p>It listens for MIDI clock on IAC Driver Bus 1 and plays on channels 1 (drums), 2 (bass) and 3 (pads). In your DAW, send MIDI clock to the IAC bus, give each instrument track that bus and its MIDI input channel, and record-enable the three tracks so they receive live MIDI. Then press Play.</p>
     </section>
@@ -196,7 +196,7 @@ RUBYLIB=../../lib ruby bin/arcx start</code></pre>
 
 <footer class="site-footer">
   <span>musicalism 0.1.0 · MIT licence</span>
-  <span><a href="https://github.com/StupidCodeFactory/rcoremidi">rcoremidi on GitHub</a></span>
+  <span><a href="https://github.com/StupidCodeFactory/archaeopteryx">archaeopteryx on GitHub</a></span>
 </footer>
 
 <script src="assets/wheel.js"></script>
