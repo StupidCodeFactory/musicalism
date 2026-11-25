@@ -1,0 +1,56 @@
+name: Release gem
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: rubygems
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Check the tag matches Musicalism::VERSION
+        run: |
+          gem_version="$(ruby -Ilib -rmusicalism/version -e 'print Musicalism::VERSION')"
+          if [ "v${gem_version}" != "${GITHUB_REF_NAME}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match Musicalism::VERSION ${gem_version}. Bump lib/musicalism/version.rb before tagging."
+            exit 1
+          fi
+
+      - name: Check the tagged commit is on master
+        run: |
+          git fetch origin master
+          if ! git merge-base --is-ancestor "${GITHUB_SHA}" origin/master; then
+            echo "::error::${GITHUB_REF_NAME} points at ${GITHUB_SHA}, which is not on master. Merge to master, then tag the merge."
+            exit 1
+          fi
+
+      - name: Run the specs
+        run: bundle exec rspec
+
+      - name: Build the gem
+        run: gem build musicalism.gemspec
+
+      - uses: rubygems/configure-rubygems-credentials@v1.0.0
+
+      - name: Push to RubyGems
+        run: gem push "musicalism-${GITHUB_REF_NAME#v}.gem"

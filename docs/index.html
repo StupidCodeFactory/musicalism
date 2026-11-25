@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Musicalism — harmony as a graph</title>
+<meta name="description" content="Music theory in plain Ruby: notes, scales, chords, keys, modulations and the graph between keys.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<div class="stars"></div>
+<header class="site-header">
+  <a class="logo" href="index.html"><span class="logo-mark"></span>musicalism <small>v0.1.0</small></a>
+  <nav class="site-nav" aria-label="Main">
+    <a href="index.html" aria-current="page">Home</a>
+    <a href="reference.html">Reference</a>
+    <a href="graph.html">Key graph</a>
+    <a class="optional" href="archaeopteryx.html">archaeopteryx</a>
+    <a class="optional" href="https://github.com/StupidCodeFactory/musicalism">GitHub</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero">
+    <div>
+      <h1>Harmony,<br><em>as a graph</em><br>you can walk.</h1>
+      <p class="lede">Musicalism is music theory in plain Ruby. Ask it for the V of A minor, the pivot between C and G, or the smoothest route from C major to F# major. It answers with notes, octaves and MIDI numbers, ready for the next bar.</p>
+      <div class="cta">
+        <a class="btn btn-solid" href="#install">Install</a>
+        <a class="btn" href="graph.html">Explore the key graph</a>
+      </div>
+    </div>
+    <div>
+      <svg class="wheel" id="hero-wheel" aria-label="Circle of fifths showing a six-step path from C major to F# major"></svg>
+      <p class="readout">key.path_to('F# major') · distance <b>6</b> · farthest key <b>7</b></p>
+    </div>
+  </section>
+
+  <h2 class="section-title" id="install">Install</h2>
+  <div class="tour">
+    <div class="tour-step">
+      <p>Musicalism needs Ruby 3.2 or later and has no runtime dependencies. Add it to your Gemfile:</p>
+<pre><code><span class="k">gem</span> <span class="s">'musicalism'</span>, <span class="s">'~> 0.1'</span></code></pre>
+    </div>
+    <div class="tour-step">
+      <p>Then load it and start from a key:</p>
+<pre><code><span class="k">require</span> <span class="s">'musicalism'</span>
+<span class="m">key</span> = <span class="k">Musicalism</span>::<span class="k">Key</span>[<span class="s">'C major'</span>]</code></pre>
+    </div>
+  </div>
+
+  <h2 class="section-title">A quick tour</h2>
+  <div class="tour">
+    <div class="tour-step">
+      <h2>Notes know their MIDI number</h2>
+      <p>Scientific pitch notation, C4 = 60. Enharmonic notes are equal.</p>
+<pre><code><span class="k">Musicalism</span>::<span class="k">Note</span>.new(<span class="s">'C#4'</span>).to_midi   <span class="c"># => 61</span>
+<span class="k">Musicalism</span>::<span class="k">Note</span>.new(<span class="s">'B#3'</span>) == <span class="k">Musicalism</span>::<span class="k">Note</span>.new(<span class="s">'C4'</span>)  <span class="c"># => true</span></code></pre>
+    </div>
+    <div class="tour-step">
+      <h2>Keys give chords by numeral</h2>
+      <p>In minor keys, V comes from harmonic minor.</p>
+<pre><code><span class="m">key</span>.chord(<span class="s">:V</span>).to_midi                 <span class="c"># => [67, 71, 74]</span>
+<span class="k">Musicalism</span>::<span class="k">Key</span>[<span class="s">'A minor'</span>].chord(<span class="s">:V</span>)  <span class="c"># => E major</span>
+<span class="m">key</span>.numerals  <span class="c"># => [:I, :ii, :iii, :IV, :V, :vi, :vii]</span></code></pre>
+    </div>
+    <div class="tour-step">
+      <h2>Relatives and neighbours</h2>
+      <p>The relative minor, the parallel key and both neighbours on the circle of fifths.</p>
+<pre><code><span class="m">key</span>.relative         <span class="c"># => A minor</span>
+<span class="m">key</span>.parallel         <span class="c"># => C minor</span>
+<span class="m">key</span>.dominant_key     <span class="c"># => G major</span>
+<span class="m">key</span>.subdominant_key  <span class="c"># => F major</span></code></pre>
+    </div>
+    <div class="tour-step">
+      <h2>Modulate through a pivot</h2>
+      <p>I, pivot, V and I of the new key, voice-led. The pivot is random unless you choose it.</p>
+<pre><code><span class="m">key</span>.modulate_to(<span class="s">'G major'</span>, via: <span class="s">:vi</span>).map(&amp;<span class="s">:to_s</span>)
+<span class="c"># => ["C major", "A minor", "D major", "G major"]</span></code></pre>
+    </div>
+    <div class="tour-step">
+      <h2>Walk the key graph</h2>
+      <p>Every key is a few closely related steps from every other. Each step has a pivot chord.</p>
+<pre><code><span class="m">key</span>.distance_to(<span class="s">'F# major'</span>)   <span class="c"># => 6</span>
+<span class="m">key</span>.modulate_through(<span class="m">key</span>.path_to(<span class="s">'D major'</span>))
+<span class="c"># => C, E minor, D, G, B minor, A, D major</span></code></pre>
+    </div>
+    <div class="tour-step">
+      <h2>Borrow from a passing key</h2>
+      <p>Tonicize a degree for a bar without leaving the key.</p>
+<pre><code><span class="m">key</span>.tonicize(<span class="s">:ii</span>)            <span class="c"># => D minor</span>
+<span class="m">key</span>.secondary_dominant(<span class="s">:V</span>)   <span class="c"># => D major, V/V</span>
+<span class="m">key</span>.two_five(<span class="s">:IV</span>)            <span class="c"># => G minor, C major</span></code></pre>
+    </div>
+  </div>
+
+  <h2 class="section-title">Go further</h2>
+  <div class="cards" style="padding-top: 20px">
+    <a class="card" href="reference.html"><h2>Reference</h2><p>Every class and method: Note, Interval, Scale, Chord, Key, Pivot, with real outputs and the errors they raise.</p></a>
+    <a class="card" href="graph.html"><h2>Key graph</h2><p>Distances, shortest paths and chained modulations across all 24 keys. Click the wheel to plan a route.</p></a>
+    <a class="card" href="archaeopteryx.html"><h2>Play it live</h2><p>archaeopteryx walks the graph like an arpeggiator over keys, and its clips follow the walk bar by bar.</p></a>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <span>musicalism 0.1.0 · MIT licence</span>
+  <span>A0 to C8 · C4 = 60</span>
+</footer>
+
+<script src="assets/wheel.js"></script>
+<script>
+  const { renderWheel, idFromName } = window.KeyGraph;
+  const route = ['C major', 'F major', 'Bb major', 'Eb major', 'Ab major', 'Db major', 'F# major'].map(idFromName);
+  renderWheel(document.getElementById('hero-wheel'), { from: route[0], path: route, caption: { top: 'C → F#', bottom: '6 steps' } });
+</script>
+</body>
+</html>

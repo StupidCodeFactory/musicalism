@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Play it live — Musicalism</title>
+<meta name="description" content="archaeopteryx journeys walk the musicalism key graph like an arpeggiator over keys, and clips follow them bar by bar.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<div class="stars"></div>
+<header class="site-header">
+  <a class="logo" href="index.html"><span class="logo-mark"></span>musicalism <small>v0.1.0</small></a>
+  <nav class="site-nav" aria-label="Main">
+    <a href="index.html">Home</a>
+    <a href="reference.html">Reference</a>
+    <a href="graph.html">Key graph</a>
+    <a class="optional" href="archaeopteryx.html" aria-current="page">archaeopteryx</a>
+    <a class="optional" href="https://github.com/StupidCodeFactory/musicalism">GitHub</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" aria-label="archaeopteryx guide">
+    <p class="nav-title">Clips</p>
+    <a href="#clips">Keys in clips</a>
+    <a href="#modulate">modulate</a>
+    <p class="nav-title">Journeys</p>
+    <a href="#journeys">Register a journey</a>
+    <a href="#modes">Modes</a>
+    <a href="#follow">Follow a journey</a>
+    <a href="#step">The step</a>
+    <a href="#signals">Reacting to the journey</a>
+    <a href="#steering">Steering live</a>
+    <p class="nav-title">Try it</p>
+    <a href="#demo">Journey demo</a>
+  </nav>
+
+  <main class="content">
+    <p class="crumb">Guide</p>
+    <h1>Play it live with archaeopteryx</h1>
+    <p><a href="https://github.com/StupidCodeFactory/archaeopteryx">archaeopteryx</a> is a live-coding MIDI engine for macOS. Its <code>arcx</code> daemon reloads clip files as you save them and keeps the MIDI stream in time with an external clock. Musicalism supplies the harmony: clips name keys, degrees and roman numerals, and journeys walk the key graph while the music plays.</p>
+
+    <section id="clips">
+      <h2>Keys in clips</h2>
+      <p>Give a clip a key, then use scale degrees and roman numerals instead of note names.</p>
+<pre><code>Archaeopteryx::Clip.register :keys do
+  key 'A minor'
+  note 5, 16, [1, 0, 0, 0] * 4          <span class="c"># the 5th degree of A minor: E5</span>
+  chord :V, 16, [1] + [0] * 15          <span class="c"># E major, from harmonic minor</span>
+  chord :iv, 16, [0] * 8 + [1] + [0] * 7, inversion: 1
+end</code></pre>
+      <table>
+        <tr><th>Clip method</th><th>What it plays</th></tr>
+        <tr><td><code>key name</code></td><td>Sets the clip key, through <code>Key.coerce</code>. Reloading the file forgets it.</td></tr>
+        <tr><td><code>note pitch_or_degree, resolution, rhythm</code></td><td>A note name such as <code>'E5'</code>, or an Integer degree of the clip key.</td></tr>
+        <tr><td><code>chord numeral_or_chord, resolution, rhythm, inversion: 0</code></td><td>The chord on a numeral of the clip key, or a musicalism <code>Chord</code> as given. All notes start together.</td></tr>
+      </table>
+      <p>Degrees and numerals need a key: without one the clip raises <code>ArgumentError</code>, "set the clip key first, e.g. key 'C major'".</p>
+    </section>
+
+    <section id="modulate">
+      <h2>modulate</h2>
+      <p>Plays the chords of <code>Key#modulate_to</code>, one per bar, then starts again. Notes and chords defined outside it play on every bar.</p>
+<pre><code>Archaeopteryx::Clip.register :change do
+  key 'C major'
+  modulate to: 'G major', via: :vi, rhythm: [1, 0, 1, 0] * 4
+end
+<span class="c"># bar 1: C4 E4 G4 · bar 2: C4 E4 A4 · bar 3: D4 F#4 A4 · bar 4: D4 G4 B4</span></code></pre>
+      <p>Options: <code>to:</code>, <code>via:</code>, <code>beat_resolution:</code> (16), <code>rhythm:</code> (a hit on the first step) and <code>voice_leading:</code> (true).</p>
+    </section>
+
+    <section id="journeys">
+      <h2>Register a journey</h2>
+      <p>A journey is an arpeggiator whose notes are keys. <strong>Up</strong> moves away from home, <strong>down</strong> moves toward it, <strong>range</strong> is how far out it goes, and <strong>rate</strong> is how many bars each key lasts. At each step it takes the current key's <code>closely_related</code> keys from musicalism and picks one.</p>
+<pre><code>Archaeopteryx::Journey.register :voyage, from: 'C major', mode: :up_down, range: 3, rate: 4
+Archaeopteryx::Journey.register :drift,  from: 'A minor', mode: :random, rate: 2, seed: 7
+Archaeopteryx::Journey.register :mine,   from: 'C major', rate: 8 do |key, candidates, home|
+  candidates.max_by { |candidate| candidate.distance_to(home) }   <span class="c"># always farther</span>
+end</code></pre>
+      <table>
+        <tr><th>Option</th><th>Default</th><th>Meaning</th></tr>
+        <tr><td><code>from:</code></td><td>required</td><td>The first key, a <code>Key</code> or a name.</td></tr>
+        <tr><td><code>mode:</code></td><td><code>:up_down</code></td><td><code>:up</code>, <code>:down</code>, <code>:up_down</code> or <code>:random</code>. Anything else raises <code>ArgumentError</code>.</td></tr>
+        <tr><td><code>range:</code></td><td><code>:farthest</code></td><td>The farthest distance from home. An Integer (clamped to the farthest key), a negative offset from the farthest level (<code>-1</code> stops one short), or <code>:farthest</code>.</td></tr>
+        <tr><td><code>rate:</code></td><td>4</td><td>Bars per key.</td></tr>
+        <tr><td><code>steps:</code></td><td>none</td><td>Stop after that many keys and hold the last one.</td></tr>
+        <tr><td><code>home:</code></td><td>the <code>from:</code> key</td><td>The key that distance and direction are measured against.</td></tr>
+        <tr><td><code>seed:</code></td><td>random</td><td>Repeat a walk exactly.</td></tr>
+        <tr><td>block</td><td>none</td><td>Your own rule: receives the key, its closely related keys and home, and returns the next key (or nil to hold).</td></tr>
+      </table>
+      <p>The journey starts on bar 1 of the song. Steps are planned lazily and remembered, so every clip that follows the same journey hears the same key on the same bar.</p>
+    </section>
+
+    <section id="modes">
+      <h2>Modes</h2>
+      <table>
+        <tr><th>Mode</th><th>Walk</th><th>Distances from home, range 2</th></tr>
+        <tr><td><code>:up</code></td><td>One level farther per key until the range, then hold.</td><td>0 1 2 2 2 …</td></tr>
+        <tr><td><code>:down</code></td><td>One level closer per key until home, then hold.</td><td>from F# major: 6 5 4 3 2 1 0 0</td></tr>
+        <tr><td><code>:up_down</code></td><td>Up to the range, down to home, again and again. The way down is picked at random, so it can differ from the way up.</td><td>0 1 2 1 0 1 2 1 0</td></tr>
+        <tr><td><code>:random</code></td><td>An endless random walk among the neighbours.</td><td>any, one step at a time</td></tr>
+      </table>
+      <div class="explorer" style="grid-template-columns: minmax(0, 1fr) 260px">
+        <svg class="wheel" id="journey-wheel" aria-label="An up_down journey from C major with range 3"></svg>
+        <div class="panel">
+          <p class="label">Mode</p><p class="value">:up_down, range 3</p>
+          <p class="label">Walk</p><p class="path-list" id="journey-list"></p>
+          <button type="button" id="journey-reroll">Another walk</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="follow">
+      <h2>Follow a journey</h2>
+      <p><code>follow</code> runs its block once per bar, while that bar is prepared. Inside it the clip key is the journey's key, so <code>note 5</code> and <code>chord :IV</code> resolve in the key the music is in now. The block's sequences are added to the clip's fixed ones for that bar only.</p>
+<pre><code>Archaeopteryx::Clip.register :pads do
+  follow :voyage do |key, step|
+    chord key.chord(:I), 16, [1] + [0] * 15
+    note 1, 16, [1, 0, 0, 0] * 4
+  end
+end</code></pre>
+      <p>A journey name that is not registered raises <code>ArgumentError</code>, "Journey nowhere not found.", when the bar is prepared. Reloading the clip file without <code>follow</code> stops following.</p>
+    </section>
+
+    <section id="step">
+      <h2>The step</h2>
+      <p>The second block argument describes the bar: where the music is on the graph and where it is heading.</p>
+      <table>
+        <tr><th>Method</th><th>Returns</th></tr>
+        <tr><td><code>key</code></td><td>The journey's key for this bar.</td></tr>
+        <tr><td><code>previous_key</code></td><td>The key before it, nil on the first key.</td></tr>
+        <tr><td><code>distance</code></td><td>Steps from home.</td></tr>
+        <tr><td><code>direction</code></td><td><code>:away</code>, <code>:toward</code> or <code>:level</code>, compared with the previous key.</td></tr>
+        <tr><td><code>away?</code> <code>toward?</code></td><td>The direction as a predicate.</td></tr>
+        <tr><td><code>arrived?</code></td><td>True when the music is home.</td></tr>
+        <tr><td><code>farthest?</code></td><td>True at the journey's range.</td></tr>
+        <tr><td><code>bar</code> · <code>bars</code></td><td>The bar within this key, from 0, and how many bars the key lasts.</td></tr>
+        <tr><td><code>first_bar?</code> <code>last_bar?</code></td><td>The first or last bar of this key.</td></tr>
+        <tr><td><code>bars_until_home</code></td><td>Bars until the music is home again: 0 at home, nil when no return is planned.</td></tr>
+        <tr><td><code>modulation</code></td><td>The voice-led chords from the previous key into this one (<code>modulate_through</code>), nil on the first key and while a key is held.</td></tr>
+      </table>
+    </section>
+
+    <section id="signals">
+      <h2>Reacting to the journey</h2>
+      <p>The journey reports where the music is; the clip decides what to play. These come from the demo project:</p>
+<pre><code>Archaeopteryx::Clip.register :drums do
+  hats_by_distance = [[1, 0, 0, 0], [1, 0, 1, 0], [1, 1, 1, 0], [1, 1, 1, 1]]
+  note 'C#2', 16, [1, 0, 0, 0] * 4
+
+  follow :voyage do |_key, step|
+    note 'F#2', 16, hats_by_distance[[step.distance, 3].min] * 4            <span class="c"># busier far from home</span>
+    note 'C#3', 16, [1] + [0] * 15 if step.arrived? &amp;&amp; step.first_bar? &amp;&amp; step.modulation   <span class="c"># crash on the way home</span>
+    note 'D2', 16, [0] * 8 + [1, 0, 1, 0, 1, 1, 1, 1] if step.bars_until_home == 1    <span class="c"># snare build</span>
+  end
+end
+
+Archaeopteryx::Clip.register :pads do
+  follow :voyage do |key, step|
+    if step.first_bar? &amp;&amp; step.modulation
+      step.modulation[1..-2].each_with_index do |chord_on_the_way, half|      <span class="c"># pivot and V</span>
+        chord chord_on_the_way, 16, Array.new(16) { |sixteenth| sixteenth == half * 8 ? 1 : 0 }
+      end
+    else
+      chord key.chord(:I), 16, [1] + [0] * 15
+    end
+    chord key.secondary_dominant(:V), 16, [0] * 12 + [1, 0, 0, 0] if step.farthest? &amp;&amp; step.last_bar?
+  end
+end</code></pre>
+    </section>
+
+    <section id="steering">
+      <h2>Steering live</h2>
+      <p>Edit the journey's file and save. Registering a journey again keeps every bar already prepared and plans the new options from the key the music is in now.</p>
+      <ul>
+        <li><code>mode: :down</code> heads home from wherever the music is.</li>
+        <li><code>mode: :random</code> starts wandering.</li>
+        <li><code>range: -1</code> or a larger <code>range:</code> changes how far it goes.</li>
+        <li><code>rate: 2</code> changes key twice as often.</li>
+      </ul>
+    </section>
+
+    <section id="demo">
+      <h2>Journey demo</h2>
+      <p>archaeopteryx ships <code>script/journey_demo</code>, a small arcx project with drums, bass and pads following an <code>:up_down</code> journey from C major, three steps out and back, four bars per key.</p>
+<pre><code>cd archaeopteryx/script/journey_demo
+RUBYLIB=../../lib ruby bin/arcx start</code></pre>
+      <p>It listens for MIDI clock on IAC Driver Bus 1 and plays on channels 1 (drums), 2 (bass) and 3 (pads). In your DAW, send MIDI clock to the IAC bus, give each instrument track that bus and its MIDI input channel, and record-enable the three tracks so they receive live MIDI. Then press Play.</p>
+    </section>
+  </main>
+</div>
+
+<footer class="site-footer">
+  <span>musicalism 0.1.0 · MIT licence</span>
+  <span><a href="https://github.com/StupidCodeFactory/archaeopteryx">archaeopteryx on GitHub</a></span>
+</footer>
+
+<script src="assets/wheel.js"></script>
+<script>
+  const { renderWheel, closelyRelated, distancesFrom, keyName, idFromName } = window.KeyGraph;
+  const home = idFromName('C major');
+  const fromHome = distancesFrom(home);
+
+  function upDownWalk(range, keys) {
+    const walk = [home];
+    let heading = 'up';
+    while (walk.length < keys) {
+      const current = walk[walk.length - 1];
+      const distance = fromHome.get(current);
+      if (distance >= range) heading = 'down';
+      if (distance === 0 && walk.length > 1) heading = 'up';
+      const wanted = heading === 'up' ? distance + 1 : distance - 1;
+      const options = closelyRelated(current).filter(key => fromHome.get(key) === wanted);
+      walk.push(options[Math.floor(Math.random() * options.length)]);
+    }
+    return walk;
+  }
+
+  function drawJourney() {
+    const walk = upDownWalk(3, 7);
+    renderWheel(document.getElementById('journey-wheel'), { from: home, path: walk, caption: { top: 'range', bottom: '3' } });
+    document.getElementById('journey-list').textContent = walk.map((key, index) => `${index * 4 + 1}: ${keyName(key)}`).join('\n');
+  }
+  document.getElementById('journey-list').style.whiteSpace = 'pre-line';
+  document.getElementById('journey-reroll').addEventListener('click', drawJourney);
+  drawJourney();
+
+  const links = [...document.querySelectorAll('.sidebar a')];
+  const observer = new IntersectionObserver(entries => {
+    entries.filter(entry => entry.isIntersecting).forEach(entry => {
+      links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === `#${entry.target.id}`));
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  links.forEach(link => { const section = document.querySelector(link.getAttribute('href')); if (section) observer.observe(section); });
+</script>
+</body>
+</html>

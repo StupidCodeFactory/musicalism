@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Key graph — Musicalism</title>
+<meta name="description" content="Distances, shortest paths and chained modulations across all 24 keys.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<div class="stars"></div>
+<header class="site-header">
+  <a class="logo" href="index.html"><span class="logo-mark"></span>musicalism <small>v0.1.0</small></a>
+  <nav class="site-nav" aria-label="Main">
+    <a href="index.html">Home</a>
+    <a href="reference.html">Reference</a>
+    <a href="graph.html" aria-current="page">Key graph</a>
+    <a class="optional" href="archaeopteryx.html">archaeopteryx</a>
+    <a class="optional" href="https://github.com/StupidCodeFactory/musicalism">GitHub</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" aria-label="Key graph guide">
+    <p class="nav-title">Guide</p>
+    <a href="#explorer">Explorer</a>
+    <a href="#steps">What a step is</a>
+    <a href="#distance">Distance</a>
+    <a href="#paths">Shortest paths</a>
+    <a href="#chaining">Chaining modulations</a>
+    <a href="#spelling">Spelling and the seam</a>
+    <a href="#walking">Who walks the graph</a>
+  </nav>
+
+  <main class="content">
+    <p class="crumb">Guide</p>
+    <h1>The key graph</h1>
+    <p>All 24 major and minor keys, connected by the moves that sound smooth. The graph tells you how far apart two keys are and which keys lie in between, so a distant modulation can travel through neighbours instead of jumping.</p>
+
+    <section id="explorer">
+      <h2>Explorer</h2>
+      <p>Click a key to set the destination. Switch to "pick the start" to move the start. Each click redraws one shortest path, the same kind of route <code>path_to</code> returns.</p>
+      <div class="explorer">
+        <div>
+          <svg class="wheel" id="explorer-wheel" aria-label="Interactive circle of fifths"></svg>
+          <div class="legend"><span><i style="background:#ffd166"></i>start</span><span><i style="background:#4ef2ff"></i>on the path</span><span>outer ring: major · inner ring: minor</span></div>
+        </div>
+        <div class="panel" aria-live="polite">
+          <p class="label">From</p>
+          <p class="value" id="from-name">C major</p>
+          <p class="label">To</p>
+          <p class="value" id="to-name">F# major</p>
+          <p class="label">Distance</p>
+          <p class="value"><b id="distance">6</b> steps</p>
+          <p class="label">Path</p>
+          <p class="path-list" id="path-list"></p>
+          <button type="button" id="pick-start" aria-pressed="false">Pick the start</button>
+          <button type="button" id="reroll">Another shortest path</button>
+        </div>
+      </div>
+<pre><code id="snippet"></code></pre>
+    </section>
+
+    <section id="steps">
+      <h2>What a step is</h2>
+      <p>One step modulates to one of three keys:</p>
+      <table>
+        <tr><th>Step</th><th>From C major</th><th>From A minor</th></tr>
+        <tr><td>dominant key, a fifth up</td><td>G major</td><td>E minor</td></tr>
+        <tr><td>subdominant key, a fifth down</td><td>F major</td><td>D minor</td></tr>
+        <tr><td>relative key</td><td>A minor</td><td>C major</td></tr>
+      </table>
+      <p>These three keys share most of their chords with the key you leave, so every step has a pivot chord and sounds smooth on its own. <code>closely_related</code> returns them.</p>
+<pre><code>Musicalism::Key['C major'].closely_related  <span class="c"># => G major, F major, A minor</span></code></pre>
+    </section>
+
+    <section id="distance">
+      <h2>Distance</h2>
+      <p>The distance between two keys is the fewest steps between them. It ranks every modulation from the gentlest to the most remote. From C major, F# major is six steps away, and nothing is farther than seven.</p>
+<pre><code>key = Musicalism::Key['C major']
+key.distance_to('A minor')   <span class="c"># => 1</span>
+key.distance_to('F# major')  <span class="c"># => 6</span>
+key.farthest_distance        <span class="c"># => 7</span>
+key.keys_at(2)               <span class="c"># => D major, E minor, Bb major, D minor</span></code></pre>
+      <table>
+        <tr><th>Distance</th><th>Keys from C major</th></tr>
+        <tr><td>0</td><td>C major</td></tr>
+        <tr><td>1</td><td>G major, F major, A minor</td></tr>
+        <tr><td>2</td><td>D major, E minor, Bb major, D minor</td></tr>
+        <tr><td>3</td><td>A major, B minor, Eb major, G minor</td></tr>
+        <tr><td>4</td><td>E major, F# minor, Ab major, C minor</td></tr>
+        <tr><td>5</td><td>B major, C# minor, Db major, F minor</td></tr>
+        <tr><td>6</td><td>F# major, G# minor, Bb minor</td></tr>
+        <tr><td>7</td><td>D# minor</td></tr>
+      </table>
+      <div class="callout"><strong>Distance and journeys.</strong> archaeopteryx measures each step of a journey against home with this distance. That is how a clip knows the music is moving away, coming back, or has reached the farthest key.</div>
+    </section>
+
+    <section id="paths">
+      <h2>Shortest paths</h2>
+      <p>Most pairs of keys have several shortest paths. <code>path_to</code> picks one at random, so a set that modulates often does not repeat itself. Seed the random generator to repeat a route.</p>
+<pre><code>key.path_to('F# major', random: Random.new(1))
+<span class="c"># => C major, F major, Bb major, Eb major, Ab major, Db major, F# major</span>
+key.path_to('E minor')  <span class="c"># => C major, G major, E minor  or  C major, A minor, E minor</span></code></pre>
+    </section>
+
+    <section id="chaining">
+      <h2>Chaining modulations</h2>
+      <p>A direct <code>modulate_to</code> between distant keys has no pivot, so it jumps:</p>
+<pre><code>key.modulate_to('F# major').map(&amp;:to_s)  <span class="c"># => ["C major", "C# major", "F# major"]</span></code></pre>
+      <p><code>modulate_through</code> takes a list of keys and modulates to each in turn, sharing the I chord between two hops, voice-led from start to end. Give it a path and every hop goes through a pivot:</p>
+<pre><code>key.modulate_through(key.path_to('D major')).map(&amp;:to_s)
+<span class="c"># => ["C major", "E minor", "D major", "G major", "B minor", "A major", "D major"]</span></code></pre>
+      <div class="timeline">
+        <div class="chord-card"><span class="role">I · C</span><b>C major</b><span class="midi">hop 1</span></div>
+        <div class="chord-card"><span class="role">pivot</span><b>E minor</b><span class="midi">iii = vi</span></div>
+        <div class="chord-card"><span class="role">V · I of G</span><b>D, G major</b><span class="midi">arrive in G</span></div>
+        <div class="chord-card"><span class="role">pivot · V · I</span><b>B minor, A, D</b><span class="midi">arrive in D</span></div>
+      </div>
+    </section>
+
+    <section id="spelling">
+      <h2>Spelling and the seam</h2>
+      <p>Walking around the circle eventually reaches keys with seven sharps or seven flats. The graph identifies a key by its pitch class and mode, and <code>closely_related</code> respells each neighbour with <code>simplest_spelling</code>: the spelling with the fewest accidentals. On a tie it keeps the current spelling, so a walk up the sharp side stays on F# instead of switching to Gb.</p>
+<pre><code>Musicalism::Key.major('C#').simplest_spelling  <span class="c"># => Db major</span>
+Musicalism::Key['F# major'].closely_related    <span class="c"># => Db major, B major, D# minor</span></code></pre>
+      <p>F# major and Db major share no chord by spelling, only by sound. When <code>modulate_through</code> crosses that seam, it respells the next key to share the most chords with the current one, here C# major, so the hop still goes through a pivot:</p>
+<pre><code>Musicalism::Key['F# major'].modulate_through(['Db major']).map(&amp;:to_s)
+<span class="c"># => ["F# major", "D# minor", "G# major", "C# major"]</span></code></pre>
+      <p>The tonic of every respelled neighbour keeps the octave number of the key it comes from, so long walks never drift out of the MIDI range.</p>
+    </section>
+
+    <section id="walking">
+      <h2>Who walks the graph</h2>
+      <p>Musicalism answers questions about the graph and never decides where to go next. Choosing a direction, how far to travel and how long to stay in each key belongs to the caller. <a href="archaeopteryx.html">archaeopteryx's journeys</a> do that like an arpeggiator whose notes are keys.</p>
+    </section>
+  </main>
+</div>
+
+<footer class="site-footer">
+  <span>musicalism 0.1.0 · MIT licence</span>
+  <span><a href="https://github.com/StupidCodeFactory/musicalism">Source on GitHub</a></span>
+</footer>
+
+<script src="assets/wheel.js"></script>
+<script>
+  const { renderWheel, pathBetween, distancesFrom, keyName, idFromName } = window.KeyGraph;
+  const state = { from: idFromName('C major'), to: idFromName('F# major'), pickingStart: false, path: [] };
+  const wheel = document.getElementById('explorer-wheel');
+  const pickStart = document.getElementById('pick-start');
+
+  function plan() {
+    state.path = pathBetween(state.from, state.to);
+    draw();
+  }
+
+  function draw() {
+    renderWheel(wheel, { from: state.from, path: state.path, onSelect: select });
+    document.getElementById('from-name').textContent = keyName(state.from);
+    document.getElementById('to-name').textContent = keyName(state.to);
+    document.getElementById('distance').textContent = distancesFrom(state.from).get(state.to);
+    document.getElementById('path-list').textContent = state.path.map(keyName).join(' → ');
+    document.getElementById('snippet').textContent =
+      `key = Musicalism::Key['${keyName(state.from)}']\n` +
+      `key.distance_to('${keyName(state.to)}')  # => ${distancesFrom(state.from).get(state.to)}\n` +
+      `key.path_to('${keyName(state.to)}')\n# => ${state.path.map(keyName).join(', ')}`;
+  }
+
+  function select(id) {
+    if (state.pickingStart) {
+      state.from = id;
+      state.pickingStart = false;
+      pickStart.setAttribute('aria-pressed', 'false');
+      pickStart.textContent = 'Pick the start';
+    } else {
+      state.to = id;
+    }
+    plan();
+  }
+
+  pickStart.addEventListener('click', () => {
+    state.pickingStart = !state.pickingStart;
+    pickStart.setAttribute('aria-pressed', String(state.pickingStart));
+    pickStart.textContent = state.pickingStart ? 'Now click a key' : 'Pick the start';
+  });
+  document.getElementById('reroll').addEventListener('click', plan);
+  plan();
+
+  const links = [...document.querySelectorAll('.sidebar a')];
+  const observer = new IntersectionObserver(entries => {
+    entries.filter(entry => entry.isIntersecting).forEach(entry => {
+      links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === `#${entry.target.id}`));
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  links.forEach(link => { const section = document.querySelector(link.getAttribute('href')); if (section) observer.observe(section); });
+</script>
+</body>
+</html>

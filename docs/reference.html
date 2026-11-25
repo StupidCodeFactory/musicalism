@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference — Musicalism</title>
+<meta name="description" content="Every class and method in musicalism, with real outputs.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<div class="stars"></div>
+<header class="site-header">
+  <a class="logo" href="index.html"><span class="logo-mark"></span>musicalism <small>v0.1.0</small></a>
+  <nav class="site-nav" aria-label="Main">
+    <a href="index.html">Home</a>
+    <a href="reference.html" aria-current="page">Reference</a>
+    <a href="graph.html">Key graph</a>
+    <a class="optional" href="archaeopteryx.html">archaeopteryx</a>
+    <a class="optional" href="https://github.com/StupidCodeFactory/musicalism">GitHub</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" aria-label="Reference">
+    <p class="nav-title">Material</p>
+    <a href="#note">Note</a>
+    <a href="#interval">Interval</a>
+    <a href="#scale">Scale</a>
+    <a href="#chord">Chord</a>
+    <p class="nav-title">Key</p>
+    <a href="#key">Building a key</a>
+    <a href="#key-relations">Related keys</a>
+    <a href="#key-degrees">Degrees and chords</a>
+    <a href="#key-modulation">Modulation</a>
+    <a href="#pivot">Pivot</a>
+    <a href="#key-graph">Key graph</a>
+    <a href="#micro">Micro modulations</a>
+    <p class="nav-title">Appendix</p>
+    <a href="#errors">Errors</a>
+    <a href="#constants">Constants</a>
+  </nav>
+
+  <main class="content">
+    <p class="crumb">Reference</p>
+    <h1>Every class, every method</h1>
+    <p>All examples run against musicalism 0.1.0 and show the real return values. Chords and keys print as names here for readability; they are <code>Chord</code> and <code>Key</code> objects. Notes print as pitch and octave, such as <code>G4</code>.</p>
+
+    <section id="note">
+      <h2>Note</h2>
+      <p>A pitch with an octave, inside the piano range A0 to C8. Musicalism uses scientific pitch notation: C4 is middle C, MIDI 60. The octave belongs to the letter, so B#3 and C4 are the same MIDI note, and so are Cb4 and B3.</p>
+
+      <h3 id="note-new"><span class="owner">Note.</span>new(note, octave = nil)</h3>
+      <p class="sig">→ <b>Note</b> · raises <code>Note::UnkownNoteError</code> outside A0..C8</p>
+      <p>Takes a name with or without an octave, or a pitch and an octave apart. Without an octave the note sits in octave 4. Alterations go up to two sharps or two flats.</p>
+<pre><code>Musicalism::Note.new('C#4')     <span class="c"># => C#4</span>
+Musicalism::Note.new('E', 5)    <span class="c"># => E5</span>
+Musicalism::Note.new('Bbb')     <span class="c"># => Bbb4</span>
+Musicalism::Note.new('H4')      <span class="c"># raises Note::UnkownNoteError, "H4 is not a valid note"</span>
+Musicalism::Note.new('C9')      <span class="c"># raises Note::UnkownNoteError, "C9 is not a valid note"</span></code></pre>
+
+      <h3 id="note-from-midi"><span class="owner">Note.</span>from_midi(midi_number)</h3>
+      <p class="sig">→ <b>Note</b>, spelled with a natural or a single sharp</p>
+<pre><code>Musicalism::Note.from_midi(61)  <span class="c"># => C#4</span>
+Musicalism::Note.from_midi(60)  <span class="c"># => C4</span></code></pre>
+
+      <h3 id="note-each"><span class="owner">Note.</span>each { |note| … }</h3>
+      <p class="sig">yields 88 notes, A0 to C8, one per MIDI number from 21 to 108</p>
+<pre><code>notes = []
+Musicalism::Note.each { |note| notes &lt;&lt; note }
+notes.size                 <span class="c"># => 88</span>
+[notes.first, notes.last]  <span class="c"># => [A0, C8]</span></code></pre>
+
+      <h3 id="note-parse"><span class="owner">Note.</span>parse_note_and_alteration(string)</h3>
+      <p class="sig">→ <b>Hash</b> with <code>:pitch</code>, <code>:octave</code>, <code>:alteration</code></p>
+<pre><code>Musicalism::Note.parse_note_and_alteration('Eb5')
+<span class="c"># => {pitch: "Eb", octave: 5, alteration: "b"}</span></code></pre>
+
+      <h3 id="note-readers"><span class="owner">Note#</span>pitch, octave, alteration, letter</h3>
+      <p class="sig">→ <b>String</b>, <b>Integer</b>, <b>String</b> or nil, <b>String</b></p>
+      <p><code>pitch</code> includes the alteration. <code>alteration</code> is only the suffix and is nil for a natural note. <code>letter</code> is the letter name alone.</p>
+<pre><code>note = Musicalism::Note.new('C#4')
+note.pitch                                <span class="c"># => "C#"</span>
+note.octave                               <span class="c"># => 4</span>
+Musicalism::Note.new('Bb3').alteration    <span class="c"># => "b"</span>
+Musicalism::Note.new('C4').alteration     <span class="c"># => nil</span>
+Musicalism::Note.new('F#5').letter        <span class="c"># => "F"</span></code></pre>
+
+      <h3 id="note-to-midi"><span class="owner">Note#</span>to_midi</h3>
+      <p class="sig">→ <b>Integer</b> from 21 to 108</p>
+<pre><code>Musicalism::Note.new('C#4').to_midi  <span class="c"># => 61</span>
+Musicalism::Note.new('E', 5).to_midi <span class="c"># => 76</span></code></pre>
+
+      <h3 id="note-next"><span class="owner">Note#</span>next</h3>
+      <p class="sig">→ <b>Note</b> one semitone up · raises <code>Note::UnkownNoteError</code> past C8</p>
+<pre><code>Musicalism::Note.new('C#4').next  <span class="c"># => D4</span></code></pre>
+
+      <h3 id="note-octaves"><span class="owner">Note#</span>up_an_octave, down_an_octave</h3>
+      <p class="sig">→ <b>Note</b> with the same spelling, one octave higher or lower</p>
+<pre><code>Musicalism::Note.new('G4').up_an_octave    <span class="c"># => G5</span>
+Musicalism::Note.new('G4').down_an_octave  <span class="c"># => G3</span></code></pre>
+
+      <h3 id="note-transpose"><span class="owner">Note#</span>transpose(semitones)</h3>
+      <p class="sig">→ <b>[Note]</b>, one per enharmonic spelling, all in octave 4</p>
+      <p>The octave is dropped: pick the spelling you need and set the octave yourself. Scales use this to give each degree the right letter.</p>
+<pre><code>Musicalism::Note.new('C4').transpose(4).map(&amp;:pitch)  <span class="c"># => ["D##", "E", "Fb"]</span>
+Musicalism::Note.new('C4').transpose(6).map(&amp;:pitch)  <span class="c"># => ["E##", "F#", "Gb"]</span></code></pre>
+
+      <h3 id="note-interval-from"><span class="owner">Note#</span>interval_from(note)</h3>
+      <p class="sig">→ <b>Integer</b>, the unsigned semitone distance between the two pitch classes</p>
+      <p>Octaves are ignored and so is the order of the notes. The count runs on an index that starts at A, so it is a distance within that index rather than a musical interval.</p>
+<pre><code>Musicalism::Note.new('C').interval_from(Musicalism::Note.new('G'))   <span class="c"># => 7</span>
+Musicalism::Note.new('B').interval_from(Musicalism::Note.new('B#'))  <span class="c"># => 1</span></code></pre>
+
+      <h3 id="note-compare"><span class="owner">Note#</span>&lt;=&gt; and Comparable</h3>
+      <p class="sig">compares MIDI numbers, so enharmonic notes are equal</p>
+<pre><code>Musicalism::Note.new('C4') &lt; Musicalism::Note.new('C#4')    <span class="c"># => true</span>
+Musicalism::Note.new('C##4') == Musicalism::Note.new('D4')  <span class="c"># => true</span>
+Musicalism::Note.new('B#3') == Musicalism::Note.new('C4')   <span class="c"># => true</span></code></pre>
+    </section>
+
+    <section id="interval">
+      <h2>Interval</h2>
+      <p>Named intervals as semitone counts. Create one generator and ask it for intervals: <code>Musicalism::Interval.new.perfect_fifth</code> returns 7. Enharmonic names are aliases. Some names keep their original spelling (<code>perfect_forth</code>, <code>augmented_fith</code>).</p>
+      <table>
+        <tr><th>Semitones</th><th>Methods</th></tr>
+        <tr><td>0</td><td><code>perfect_unison</code> <code>diminished_second</code></td></tr>
+        <tr><td>1</td><td><code>minor_second</code> <code>augmented_unison</code></td></tr>
+        <tr><td>2</td><td><code>major_second</code> <code>diminished_third</code></td></tr>
+        <tr><td>3</td><td><code>minor_third</code> <code>augmented_second</code></td></tr>
+        <tr><td>4</td><td><code>major_third</code> <code>diminished_forth</code></td></tr>
+        <tr><td>5</td><td><code>perfect_forth</code> <code>augmented_third</code></td></tr>
+        <tr><td>6</td><td><code>augmented_forth</code> <code>diminished_fifth</code></td></tr>
+        <tr><td>7</td><td><code>perfect_fifth</code> <code>diminished_sixth</code></td></tr>
+        <tr><td>8</td><td><code>minor_sixth</code> <code>augmented_fith</code></td></tr>
+        <tr><td>9</td><td><code>major_sixth</code> <code>diminished_seventh</code></td></tr>
+        <tr><td>10</td><td><code>minor_seventh</code> <code>augmented_sixth</code></td></tr>
+        <tr><td>11</td><td><code>major_seventh</code> <code>diminished_octave</code></td></tr>
+        <tr><td>12</td><td><code>perfect_octave</code></td></tr>
+      </table>
+    </section>
+
+    <section id="scale">
+      <h2>Scale</h2>
+      <p>Four concrete scales share one interface. <code>Scale</code> itself has no structure, so use a subclass. Each degree gets the next letter name, so spellings stay correct in every key, and the octave goes up when the letter passes B, so notes always rise from the root.</p>
+      <table>
+        <tr><th>Class</th><th>Notes from A</th></tr>
+        <tr><td><code>MajorScale</code></td><td>major, from C: C4 D4 E4 F4 G4 A4 B4</td></tr>
+        <tr><td><code>MinorScale</code></td><td>natural minor: A4 B4 C5 D5 E5 F5 G5</td></tr>
+        <tr><td><code>HarmonicMinorScale</code></td><td>raised 7th: A4 B4 C5 D5 E5 F5 G#5</td></tr>
+        <tr><td><code>MelodicMinorScale</code></td><td>ascending form, raised 6th and 7th: A4 B4 C5 D5 E5 F#5 G#5</td></tr>
+      </table>
+
+      <h3 id="scale-new"><span class="owner">MajorScale.</span>new(root)</h3>
+      <p class="sig">root is a <b>Note</b> or a name · → the scale; <code>root_note</code> reads it back</p>
+
+      <h3 id="scale-notes"><span class="owner">Scale#</span>notes</h3>
+      <p class="sig">→ <b>[Note]</b>, seven degrees rising from the root</p>
+<pre><code>Musicalism::MajorScale.new('D').notes   <span class="c"># => D4 E4 F#4 G4 A4 B4 C#5</span>
+Musicalism::MajorScale.new('E#').notes  <span class="c"># => E#4 F##4 G##4 A#4 B#4 C##5 D##5</span></code></pre>
+
+      <h3 id="scale-alterations"><span class="owner">Scale#</span>alterations</h3>
+      <p class="sig">→ <b>[String]</b> in key-signature order: flats B E A D G C F, then sharps F C G D A E B</p>
+      <p>For harmonic and melodic minor the list includes the raised degrees, so it is not a key signature for those scales.</p>
+<pre><code>Musicalism::MajorScale.new('A').alterations          <span class="c"># => ["F#", "C#", "G#"]</span>
+Musicalism::MinorScale.new('F').alterations          <span class="c"># => ["Bb", "Eb", "Ab", "Db"]</span>
+Musicalism::HarmonicMinorScale.new('A').alterations  <span class="c"># => ["G#"]</span></code></pre>
+
+      <h3 id="scale-degree-chord"><span class="owner">Scale#</span>degree_chord(degree, inversion: 0)</h3>
+      <p class="sig">degree is one of <code>Scale::DEGREES</code> · → <b>Chord</b></p>
+      <p>Stacks thirds over the scale laid out across two octaves, so every triad rises from its root. The degrees are <code>:tonic</code>, <code>:supertonic</code>, <code>:mediant</code>, <code>:subdominant</code>, <code>:dominant</code>, <code>:submediant</code> and <code>:subtonic</code>.</p>
+<pre><code>scale = Musicalism::MajorScale.new('C')
+scale.degree_chord(:dominant)                <span class="c"># => G4 B4 D5</span>
+scale.degree_chord(:dominant, inversion: 2)  <span class="c"># => D5 G5 B5</span></code></pre>
+    </section>
+
+    <section id="chord">
+      <h2>Chord</h2>
+      <p>An ordered list of notes. Triads are recognised in any inversion.</p>
+
+      <h3 id="chord-new"><span class="owner">Chord.</span>new(notes, inversion: 0)</h3>
+      <p class="sig">→ <b>Chord</b>; <code>notes</code> reads the notes back</p>
+<pre><code>chord = Musicalism::Chord.new(%w[C4 E4 G4].map { |name| Musicalism::Note.new(name) })
+chord.inspect  <span class="c"># => "#&lt;Musicalism::Chord C4 E4 G4&gt;"</span></code></pre>
+
+      <h3 id="chord-quality"><span class="owner">Chord#</span>quality, root, to_s</h3>
+      <p class="sig">→ <b>Symbol</b> or nil, <b>Note</b> or nil, <b>String</b></p>
+      <p>Quality is <code>:major</code>, <code>:minor</code>, <code>:diminished</code> or <code>:augmented</code>. For notes that are not a triad, quality and root are nil and <code>to_s</code> lists the pitches.</p>
+<pre><code>chord_of = -&gt;(names) { Musicalism::Chord.new(names.split.map { |name| Musicalism::Note.new(name) }) }
+chord_of['E4 G4 C5'].to_s      <span class="c"># => "C major"</span>
+chord_of['E4 G4 C5'].quality   <span class="c"># => :major</span>
+chord_of['E4 G4 C5'].root      <span class="c"># => C5</span>
+chord_of['C4 E4 G#4'].to_s     <span class="c"># => "C augmented"</span>
+chord_of['B4 D5 F5'].to_s      <span class="c"># => "B diminished"</span>
+chord_of['C4 D4 E4'].to_s      <span class="c"># => "C D E"</span></code></pre>
+
+      <h3 id="chord-spelling"><span class="owner">Chord#</span>spelling, to_midi</h3>
+      <p class="sig">→ <b>[String]</b>, <b>[Integer]</b></p>
+<pre><code>chord_of['C4 E4 G4'].spelling  <span class="c"># => ["C", "E", "G"]</span>
+chord_of['C4 E4 G4'].to_midi   <span class="c"># => [60, 64, 67]</span></code></pre>
+
+      <h3 id="chord-inverse"><span class="owner">Chord#</span>inverse(depth), inverse!(depth)</h3>
+      <p class="sig">→ a new <b>Chord</b> · the bang version changes the chord in place</p>
+      <p>Each step moves the lowest note up an octave.</p>
+<pre><code>chord_of['C4 E4 G4'].inverse(1).to_midi  <span class="c"># => [64, 67, 72]</span>
+chord_of['C4 E4 G4'].inverse(2)          <span class="c"># => G4 C5 E5</span></code></pre>
+
+      <h3 id="chord-equality"><span class="owner">Chord#</span>==</h3>
+      <p class="sig">equal when the note lists are equal, note by note</p>
+
+      <h3 id="chord-voiced-near"><span class="owner">Chord#</span>voiced_near(previous)</h3>
+      <p class="sig">→ <b>Chord</b>, the same chord in the inversion and octave closest to <code>previous</code></p>
+      <p>Tries every inversion, up to two octaves either way, and keeps the voicing whose notes move the fewest semitones in total. Voicings outside A0..C8 are skipped.</p>
+<pre><code>chord_of['A4 C5 E5'].voiced_near(chord_of['C4 E4 G4']).to_midi  <span class="c"># => [60, 64, 69]</span></code></pre>
+
+      <h3 id="chord-voice-lead"><span class="owner">Chord.</span>voice_lead(chords)</h3>
+      <p class="sig">→ <b>[Chord]</b>, the first chord as given, every next chord voiced near the one before</p>
+<pre><code>key = Musicalism::Key['C major']
+Musicalism::Chord.voice_lead([key.chord(:I), key.chord(:IV), key.chord(:V), key.chord(:I)]).map(&amp;:to_midi)
+<span class="c"># => [[60, 64, 67], [60, 65, 69], [59, 62, 67], [60, 64, 67]]</span></code></pre>
+    </section>
+
+    <section id="key">
+      <h2>Building a key</h2>
+      <p><code>Key</code> is the main API: start here, and drop to <code>Scale</code> only when you need it.</p>
+
+      <h3 id="key-constructors"><span class="owner">Key.</span>major(tonic), minor(tonic), [name], new(tonic, mode)</h3>
+      <p class="sig">tonic is a <b>Note</b> or a name · → <b>Key</b> · raises <code>ArgumentError</code> for a mode other than major or minor</p>
+<pre><code>Musicalism::Key.major('C')        <span class="c"># => C major</span>
+Musicalism::Key.minor('A')        <span class="c"># => A minor</span>
+Musicalism::Key['F# minor']       <span class="c"># => F# minor</span>
+Musicalism::Key['C dorian']       <span class="c"># raises ArgumentError, "dorian is not a key mode, use major or minor"</span></code></pre>
+
+      <h3 id="key-coerce"><span class="owner">Key.</span>coerce(key_or_name)</h3>
+      <p class="sig">→ the <b>Key</b> itself, or a key built from its name</p>
+      <p>Every method that takes another key accepts a name too, through <code>coerce</code>.</p>
+<pre><code>Musicalism::Key.coerce('D minor')  <span class="c"># => D minor</span></code></pre>
+
+      <h3 id="key-readers"><span class="owner">Key#</span>tonic, mode, major?, minor?, scale</h3>
+      <p class="sig">→ <b>Note</b>, <b>Symbol</b>, booleans, <b>MajorScale</b> or <b>MinorScale</b></p>
+<pre><code>key = Musicalism::Key['C major']
+key.tonic        <span class="c"># => C4</span>
+key.mode         <span class="c"># => :major</span>
+key.major?       <span class="c"># => true</span>
+key.scale.class  <span class="c"># => Musicalism::MajorScale</span></code></pre>
+
+      <h3 id="key-signature"><span class="owner">Key#</span>signature</h3>
+      <p class="sig">→ <b>[String]</b>, the altered pitches in key-signature order</p>
+<pre><code>Musicalism::Key['C major'].signature   <span class="c"># => []</span>
+Musicalism::Key['E minor'].signature   <span class="c"># => ["F#"]</span>
+Musicalism::Key['Eb major'].signature  <span class="c"># => ["Bb", "Eb", "Ab"]</span>
+Musicalism::Key['F# major'].signature  <span class="c"># => ["F#", "C#", "G#", "D#", "A#", "E#"]</span></code></pre>
+
+      <h3 id="key-equality"><span class="owner">Key#</span>==, to_s, inspect</h3>
+      <p class="sig">equal when the tonic is spelled the same and the mode matches; the octave does not count</p>
+<pre><code>Musicalism::Key['C major'] == Musicalism::Key.major('C')     <span class="c"># => true</span>
+Musicalism::Key['Db major'] == Musicalism::Key['C# major']   <span class="c"># => false</span>
+Musicalism::Key['C major'].inspect                           <span class="c"># => "#&lt;Musicalism::Key C major&gt;"</span></code></pre>
+    </section>
+
+    <section id="key-relations">
+      <h2>Related keys</h2>
+
+      <h3 id="key-relative"><span class="owner">Key#</span>relative</h3>
+      <p class="sig">→ <b>Key</b>: the relative minor a minor third below, or the relative major a minor third above</p>
+      <p>The relative of C4 major is A3 minor, and its relative is C4 major again, so walking back and forth never drifts.</p>
+<pre><code>key = Musicalism::Key['C major']
+key.relative                 <span class="c"># => A minor, tonic A3</span>
+key.relative.relative.tonic  <span class="c"># => C4</span></code></pre>
+
+      <h3 id="key-parallel"><span class="owner">Key#</span>parallel</h3>
+      <p class="sig">→ <b>Key</b> on the same tonic in the other mode</p>
+<pre><code>Musicalism::Key['C major'].parallel  <span class="c"># => C minor</span></code></pre>
+
+      <h3 id="key-neighbours"><span class="owner">Key#</span>dominant_key, subdominant_key</h3>
+      <p class="sig">→ <b>Key</b>, the neighbours a fifth up and a fifth down on the circle of fifths, in the same mode</p>
+      <p>These are keys, not chord functions. The tonic keeps its octave number, so walking the circle never leaves the MIDI range.</p>
+<pre><code>Musicalism::Key['C major'].dominant_key     <span class="c"># => G major</span>
+Musicalism::Key['C major'].subdominant_key  <span class="c"># => F major</span></code></pre>
+    </section>
+
+    <section id="key-degrees">
+      <h2>Degrees and chords</h2>
+
+      <h3 id="key-note"><span class="owner">Key#</span>note(degree)</h3>
+      <p class="sig">degree counts from 1 · → <b>Note</b> · raises <code>ArgumentError</code> below 1</p>
+      <p>Degrees past 7 go into the next octaves.</p>
+<pre><code>key = Musicalism::Key['C major']
+(1..8).map { |degree| key.note(degree) }  <span class="c"># => C4 D4 E4 F4 G4 A4 B4 C5</span>
+key.note(9)                               <span class="c"># => D5</span>
+key.note(0)                               <span class="c"># raises ArgumentError, "degree must be 1 or more, got 0"</span></code></pre>
+
+      <h3 id="key-chord"><span class="owner">Key#</span>chord(numeral, inversion: 0)</h3>
+      <p class="sig">numeral from I to VII in either case · → <b>Chord</b> · raises <code>ArgumentError</code> for anything else</p>
+      <p>In minor keys, V and vii come from harmonic minor, so the dominant is major. Every other degree comes from natural minor.</p>
+<pre><code>key.chord(:V)                         <span class="c"># => G major, G4 B4 D5</span>
+key.chord(:V).to_midi                 <span class="c"># => [67, 71, 74]</span>
+key.chord(:vi, inversion: 1).to_midi  <span class="c"># => [72, 76, 81]</span>
+Musicalism::Key['A minor'].chord(:V)  <span class="c"># => E major</span>
+key.chord(:VIII)                      <span class="c"># raises ArgumentError, "VIII is not a roman numeral between I and VII"</span></code></pre>
+
+      <h3 id="key-chords"><span class="owner">Key#</span>chords(function = nil)</h3>
+      <p class="sig">→ <b>[Chord]</b>: all seven triads, or the chords of one harmonic function, primary chord first</p>
+      <table>
+        <tr><th>Function</th><th>Degrees</th><th>In C major</th></tr>
+        <tr><td><code>:tonic</code></td><td>I vi iii</td><td>C major, A minor, E minor</td></tr>
+        <tr><td><code>:subdominant</code></td><td>IV ii vi</td><td>F major, D minor, A minor</td></tr>
+        <tr><td><code>:dominant</code></td><td>V vii</td><td>G major, B diminished</td></tr>
+      </table>
+<pre><code>Musicalism::Key['C major'].chords.map(&amp;:to_s)
+<span class="c"># => ["C major", "D minor", "E minor", "F major", "G major", "A minor", "B diminished"]</span>
+Musicalism::Key['A minor'].chords.map(&amp;:to_s)
+<span class="c"># => ["A minor", "B diminished", "C major", "D minor", "E major", "F major", "G# diminished"]</span>
+key.chords(:mediant)  <span class="c"># raises ArgumentError, "mediant is not a harmonic function, use tonic, subdominant or dominant"</span></code></pre>
+
+      <h3 id="key-numerals"><span class="owner">Key#</span>numerals</h3>
+      <p class="sig">→ <b>[Symbol]</b>, upper case for major and augmented chords, lower case otherwise</p>
+<pre><code>Musicalism::Key['C major'].numerals  <span class="c"># => [:I, :ii, :iii, :IV, :V, :vi, :vii]</span>
+Musicalism::Key['A minor'].numerals  <span class="c"># => [:i, :ii, :III, :iv, :V, :VI, :vii]</span></code></pre>
+    </section>
+
+    <section id="key-modulation">
+      <h2>Modulation</h2>
+
+      <h3 id="key-pivot-chords"><span class="owner">Key#</span>pivot_chords(destination)</h3>
+      <p class="sig">→ <b>[Pivot]</b>, the chords both keys spell the same way, best pivot first</p>
+      <p>Chords that are IV, ii or vi in the new key come first, then chords that are tonic in neither key, then chords that are I in either key. Enharmonic matches do not count here; see <a href="#key-modulate-through">modulate_through</a> for crossing the enharmonic seam.</p>
+<pre><code>Musicalism::Key['C major'].pivot_chords('G major').map(&amp;:to_s)
+<span class="c"># => ["A minor: vi in C major = ii in G major",</span>
+<span class="c">#     "E minor: iii in C major = vi in G major",</span>
+<span class="c">#     "C major: I in C major = IV in G major",</span>
+<span class="c">#     "G major: V in C major = I in G major"]</span>
+Musicalism::Key['C major'].pivot_chords('F# major')  <span class="c"># => []</span></code></pre>
+
+      <h3 id="key-modulate-to"><span class="owner">Key#</span>modulate_to(destination, via: nil, random: Random, voice_leading: true)</h3>
+      <p class="sig">→ <b>[Chord]</b>: I, the pivot, V of the new key, I of the new key</p>
+      <ul>
+        <li>By default the pivot is drawn at random from the shared chords that are tonic in neither key, so repeated calls vary. Pass <code>random: Random.new(seed)</code> to repeat a choice.</li>
+        <li><code>via:</code> picks the pivot: a numeral in the key you leave, in either case, or a <code>Pivot</code> from <code>pivot_chords</code>. Only <code>via:</code> can use a tonic chord. A numeral that is not shared raises <code>ArgumentError</code>.</li>
+        <li>With no shared chord the progression goes straight from I to V and I of the new key.</li>
+        <li>The chords are voice-led from the opening I. <code>voice_leading: false</code> keeps each chord in root position in its own key's octave.</li>
+      </ul>
+<pre><code>key = Musicalism::Key['C major']
+key.modulate_to('G major', via: :vi).map(&amp;:to_s)     <span class="c"># => ["C major", "A minor", "D major", "G major"]</span>
+key.modulate_to('G major', via: :vi).map(&amp;:to_midi)  <span class="c"># => [[60, 64, 67], [60, 64, 69], [62, 66, 69], [62, 67, 71]]</span>
+key.modulate_to('G major', via: :vi, voice_leading: false).map(&amp;:to_midi)
+<span class="c"># => [[60, 64, 67], [69, 72, 76], [74, 78, 81], [67, 71, 74]]</span>
+key.modulate_to('G major', via: key.pivot_chords('G major').last).map(&amp;:to_s)
+<span class="c"># => ["C major", "G major", "D major", "G major"]</span>
+key.modulate_to('F# major').map(&amp;:to_s)                <span class="c"># => ["C major", "C# major", "F# major"]</span>
+key.modulate_to('G major', via: :ii)                   <span class="c"># raises ArgumentError, "ii in C major is not a chord of G major"</span></code></pre>
+      <div class="timeline">
+        <div class="chord-card"><span class="role">I · C major</span><b>C major</b><span class="midi">60 64 67</span><div class="bars"><span style="height:40%"></span><span style="height:64%"></span><span style="height:82%"></span></div></div>
+        <div class="chord-card"><span class="role">pivot · vi = ii</span><b>A minor</b><span class="midi">60 64 69</span><div class="bars"><span style="height:40%"></span><span style="height:64%"></span><span style="height:100%"></span></div></div>
+        <div class="chord-card"><span class="role">V · G major</span><b>D major</b><span class="midi">62 66 69</span><div class="bars"><span style="height:52%"></span><span style="height:76%"></span><span style="height:100%"></span></div></div>
+        <div class="chord-card"><span class="role">I · G major</span><b>G major</b><span class="midi">62 67 71</span><div class="bars"><span style="height:52%"></span><span style="height:82%"></span><span style="height:100%"></span></div></div>
+      </div>
+    </section>
+
+    <section id="pivot">
+      <h2>Pivot</h2>
+      <p>A value object returned by <code>pivot_chords</code>, with <code>chord</code>, <code>from_key</code>, <code>from_numeral</code>, <code>to_key</code> and <code>to_numeral</code>.</p>
+<pre><code>pivot = Musicalism::Key['C major'].pivot_chords('G major').first
+pivot.chord         <span class="c"># => A minor</span>
+pivot.from_numeral  <span class="c"># => :vi</span>
+pivot.to_numeral    <span class="c"># => :ii</span>
+pivot.to_s          <span class="c"># => "A minor: vi in C major = ii in G major"</span></code></pre>
+    </section>
+
+    <section id="key-graph">
+      <h2>Key graph</h2>
+      <p>A step on the graph is a modulation to the dominant, subdominant or relative key. Each step has a pivot chord. The graph compares keys by pitch class and mode, so F# major and Gb major are the same place. <a href="graph.html">The key graph guide</a> has an interactive wheel.</p>
+
+      <h3 id="key-closely-related"><span class="owner">Key#</span>closely_related</h3>
+      <p class="sig">→ <b>[Key]</b>: dominant, subdominant and relative, respelled, in the starting key's octave</p>
+<pre><code>Musicalism::Key['C major'].closely_related   <span class="c"># => G major, F major, A minor</span>
+Musicalism::Key['A minor'].closely_related   <span class="c"># => E minor, D minor, C major</span>
+Musicalism::Key['F# major'].closely_related  <span class="c"># => Db major, B major, D# minor</span></code></pre>
+
+      <h3 id="key-simplest-spelling"><span class="owner">Key#</span>simplest_spelling</h3>
+      <p class="sig">→ <b>Key</b>, the enharmonic spelling with the fewest accidentals; a tie keeps the current spelling</p>
+<pre><code>Musicalism::Key.major('C#').simplest_spelling  <span class="c"># => Db major</span>
+Musicalism::Key.major('Cb').simplest_spelling  <span class="c"># => B major</span>
+Musicalism::Key.minor('A#').simplest_spelling  <span class="c"># => Bb minor</span>
+Musicalism::Key.major('F#').simplest_spelling  <span class="c"># => F# major</span></code></pre>
+
+      <h3 id="key-distance-to"><span class="owner">Key#</span>distance_to(other)</h3>
+      <p class="sig">→ <b>Integer</b>, the fewest steps between the two keys</p>
+<pre><code>key = Musicalism::Key['C major']
+key.distance_to('G major')   <span class="c"># => 1</span>
+key.distance_to('D major')   <span class="c"># => 2</span>
+key.distance_to('F# major')  <span class="c"># => 6</span>
+key.distance_to('Eb minor')  <span class="c"># => 7</span></code></pre>
+
+      <h3 id="key-keys-at"><span class="owner">Key#</span>keys_at(distance), farthest_distance</h3>
+      <p class="sig">→ <b>[Key]</b> at that distance (empty past the farthest), <b>Integer</b></p>
+      <table>
+        <tr><th>Distance</th><th>Keys from C major</th></tr>
+        <tr><td>0</td><td>C major</td></tr>
+        <tr><td>1</td><td>G major, F major, A minor</td></tr>
+        <tr><td>2</td><td>D major, E minor, Bb major, D minor</td></tr>
+        <tr><td>3</td><td>A major, B minor, Eb major, G minor</td></tr>
+        <tr><td>4</td><td>E major, F# minor, Ab major, C minor</td></tr>
+        <tr><td>5</td><td>B major, C# minor, Db major, F minor</td></tr>
+        <tr><td>6</td><td>F# major, G# minor, Bb minor</td></tr>
+        <tr><td>7</td><td>D# minor</td></tr>
+      </table>
+
+      <h3 id="key-path-to"><span class="owner">Key#</span>path_to(destination, random: Random)</h3>
+      <p class="sig">→ <b>[Key]</b>, one shortest path, starting with the key and ending with the destination as you spelled it</p>
+<pre><code>key.path_to('F# major', random: Random.new(1))
+<span class="c"># => C major, F major, Bb major, Eb major, Ab major, Db major, F# major</span>
+key.path_to('C major')  <span class="c"># => [C major]</span></code></pre>
+
+      <h3 id="key-modulate-through"><span class="owner">Key#</span>modulate_through(keys, random: Random, voice_leading: true)</h3>
+      <p class="sig">→ <b>[Chord]</b>, <code>modulate_to</code> chained along the keys, sharing the I chord between two hops</p>
+      <p>A leading copy of the key itself is skipped, so you can pass a <code>path_to</code> result directly. Each hop respells the next key to share the most chords with the current one, so crossing from F# major to Db major still goes through a pivot.</p>
+<pre><code>key.modulate_through(key.path_to('D major')).map(&amp;:to_s)
+<span class="c"># => ["C major", "E minor", "D major", "G major", "B minor", "A major", "D major"]</span>
+Musicalism::Key['F# major'].modulate_through(['Db major']).map(&amp;:to_s)
+<span class="c"># => ["F# major", "D# minor", "G# major", "C# major"]</span></code></pre>
+    </section>
+
+    <section id="micro">
+      <h2>Micro modulations</h2>
+      <p>Short tonicizations that borrow from a passing key for a beat or a bar and leave the key itself unchanged.</p>
+
+      <h3 id="key-tonicize"><span class="owner">Key#</span>tonicize(numeral)</h3>
+      <p class="sig">→ <b>Key</b> built on that degree's chord · raises <code>ArgumentError</code> for a diminished or augmented degree</p>
+<pre><code>key = Musicalism::Key['C major']
+key.tonicize(:ii)                       <span class="c"># => D minor</span>
+Musicalism::Key['A minor'].tonicize(:V) <span class="c"># => E major</span>
+key.tonicize(:vii)                      <span class="c"># raises ArgumentError, "vii in C major is a diminished chord, it cannot be a local tonic"</span></code></pre>
+
+      <h3 id="key-secondary-dominant"><span class="owner">Key#</span>secondary_dominant(numeral)</h3>
+      <p class="sig">→ <b>Chord</b>, the V of the key on that degree</p>
+<pre><code>key.secondary_dominant(:V)    <span class="c"># => D major, V/V</span>
+key.secondary_dominant(:vi)   <span class="c"># => E major, V/vi</span>
+Musicalism::Key['A minor'].secondary_dominant(:iv)  <span class="c"># => A major</span></code></pre>
+
+      <h3 id="key-two-five"><span class="owner">Key#</span>two_five(numeral)</h3>
+      <p class="sig">→ <b>[Chord]</b>, ii and V of the key on that degree; a minor target gets ii°</p>
+<pre><code>key.two_five(:IV)  <span class="c"># => G minor, C major</span>
+key.two_five(:V)   <span class="c"># => A minor, D major</span>
+key.two_five(:ii)  <span class="c"># => E diminished, A major</span></code></pre>
+    </section>
+
+    <section id="errors">
+      <h2>Errors</h2>
+      <table>
+        <tr><th>Raised by</th><th>Error</th><th>Message</th></tr>
+        <tr><td><code>Note.new</code>, <code>Note#next</code></td><td><code>Note::UnkownNoteError</code></td><td>"H4 is not a valid note"</td></tr>
+        <tr><td><code>Key.new</code>, <code>Key[]</code></td><td><code>ArgumentError</code></td><td>"dorian is not a key mode, use major or minor"</td></tr>
+        <tr><td><code>Key#chord</code></td><td><code>ArgumentError</code></td><td>"VIII is not a roman numeral between I and VII"</td></tr>
+        <tr><td><code>Key#chords</code></td><td><code>ArgumentError</code></td><td>"mediant is not a harmonic function, use tonic, subdominant or dominant"</td></tr>
+        <tr><td><code>Key#note</code></td><td><code>ArgumentError</code></td><td>"degree must be 1 or more, got 0"</td></tr>
+        <tr><td><code>Key#modulate_to</code></td><td><code>ArgumentError</code></td><td>"ii in C major is not a chord of G major"</td></tr>
+        <tr><td><code>Key#tonicize</code> and its callers</td><td><code>ArgumentError</code></td><td>"vii in C major is a diminished chord, it cannot be a local tonic"</td></tr>
+      </table>
+      <p><code>Note::UnkownNoteError</code> is a subclass of <code>ArgumentError</code>. Its spelling is part of the API.</p>
+    </section>
+
+    <section id="constants">
+      <h2>Constants</h2>
+      <table>
+        <tr><th>Constant</th><th>Value</th></tr>
+        <tr><td><code>Note::DEFAULT_CENTER_OCTAVE</code></td><td>4</td></tr>
+        <tr><td><code>Note::LOWEST_MIDI_NOTE_NUMBER</code></td><td>21 (A0)</td></tr>
+        <tr><td><code>Note::HIGHEST_MIDI_NOTE_NUMBER</code></td><td>108 (C8)</td></tr>
+        <tr><td><code>Note::NOTES</code></td><td>12 groups of enharmonic spellings, one per semitone, starting at A</td></tr>
+        <tr><td><code>Scale::DEGREES</code></td><td>:tonic, :supertonic, :mediant, :subdominant, :dominant, :submediant, :subtonic</td></tr>
+        <tr><td><code>Key::MODES</code></td><td>:major, :minor</td></tr>
+        <tr><td><code>Key::ROMAN_NUMERALS</code></td><td>"I" to "VII"</td></tr>
+        <tr><td><code>Key::HARMONIC_FUNCTIONS</code></td><td>tonic I VI III, subdominant IV II VI, dominant V VII</td></tr>
+        <tr><td><code>Chord::TRIAD_QUALITIES</code></td><td>stacked thirds [4, 3] major, [3, 4] minor, [3, 3] diminished, [4, 4] augmented</td></tr>
+        <tr><td><code>Musicalism::VERSION</code></td><td>"0.1.0"</td></tr>
+      </table>
+    </section>
+  </main>
+</div>
+
+<footer class="site-footer">
+  <span>musicalism 0.1.0 · MIT licence</span>
+  <span><a href="https://github.com/StupidCodeFactory/musicalism">Source on GitHub</a></span>
+</footer>
+
+<script>
+  const links = [...document.querySelectorAll('.sidebar a')];
+  const sections = links.map(link => document.querySelector(link.getAttribute('href')));
+  const observer = new IntersectionObserver(entries => {
+    entries.filter(entry => entry.isIntersecting).forEach(entry => {
+      links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === `#${entry.target.id}`));
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(section => section && observer.observe(section));
+</script>
+</body>
+</html>

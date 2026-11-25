@@ -29,7 +29,7 @@ No linter is declared in the gemspec.
 - `to_midi` uses scientific pitch notation (C4 = 60, A0 = 21). The octave belongs to the letter, so `B#3` = `C4` = 60 and `Cb4` = `B3` = 59.
 - Equality comes from `Comparable` on `to_midi`, so enharmonic notes are equal (`Note.new('C##') == Note.new('D')`). Specs that compare notes check pitch, not spelling.
 - `next` returns the note one semitone up, built by `Note.from_midi`, which always spells with a natural or a single sharp. Past C8 it raises `UnkownNoteError`.
-- `Note.new` takes `"E5"` or `("E", 5)`. rcoremidi (`../rcoremidi/lib/rcoremidi/note.rb`) uses the two-argument form.
+- `Note.new` takes `"E5"` or `("E", 5)`. archaeopteryx (`../archaeopteryx/lib/archaeopteryx/note.rb`) uses the two-argument form.
 - `transpose(semitones)` returns an **array** of `Note`s, one per enharmonic spelling. The octave is dropped (each result uses the default octave). Callers pick the spelling they need.
 
 ### Interval (`lib/musicalism/interval.rb`)
@@ -45,13 +45,13 @@ Instance methods that return semitone counts (`major_third` gives 4). Enharmonic
 
 ### Chord (`lib/musicalism/chord.rb`)
 
-Wraps an ordered array of `Note`s. Each inversion step moves the lowest note up an octave. `==` compares the note arrays. `to_midi` returns the MIDI numbers, ready for rcoremidi note-ons. `quality`, `root` and `to_s` ("A minor") recognise triads in any inversion by trying each rotation. They return `nil` (or the plain pitches) when the notes are not a triad.
+Wraps an ordered array of `Note`s. Each inversion step moves the lowest note up an octave. `==` compares the note arrays. `to_midi` returns the MIDI numbers, ready for archaeopteryx note-ons. `quality`, `root` and `to_s` ("A minor") recognise triads in any inversion by trying each rotation. They return `nil` (or the plain pitches) when the notes are not a triad.
 
 `voiced_near(previous)` returns the same chord in the inversion and octave (within two octaves either way) whose notes move the fewest semitones from `previous`. Voicings outside A0..C8 are skipped. `Chord.voice_lead(chords)` applies that along a progression, keeping the first chord as given.
 
 ### Key (`lib/musicalism/key.rb`)
 
-This is the API rcoremidi should use, so keep it readable. `Scale` is the lower layer underneath it.
+This is the API archaeopteryx should use, so keep it readable. `Scale` is the lower layer underneath it.
 
 - Build with `Key.major('C')`, `Key.minor('A')` or `Key['F# minor']`. Equality compares tonic spelling and mode, not octave, so `Db major` is not `C# major`.
 - `chord(numeral, inversion:)` takes `:I`..`:VII` in any case. In minor keys, V and vii° come from harmonic minor (E major in A minor). Every other degree comes from natural minor.
@@ -63,7 +63,7 @@ This is the API rcoremidi should use, so keep it readable. `Scale` is the lower 
 
 ### Key graph (`Key#closely_related`, `#distance_to`, `#path_to`, `#modulate_through`)
 
-musicalism answers questions about the graph. It never decides where to go: walking it (arpeggiator modes, direction, bars) belongs to rcoremidi.
+musicalism answers questions about the graph. It never decides where to go: walking it (arpeggiator modes, direction, bars) belongs to archaeopteryx.
 
 - A step is a modulation to the dominant, subdominant or relative key. `closely_related` returns those three, respelled with `simplest_spelling` (fewest accidentals in the signature; a tie keeps the current spelling, so F# stays F#) and with the tonic octave number of the starting key, so long walks never drift out of range.
 - The graph compares keys by pitch class and mode (protected `enharmonic_to?`). `Key#==` still compares spelling.
@@ -83,7 +83,7 @@ Short tonicizations that leave the key itself unchanged. `tonicize(:ii)` returns
   - By default the pivot is drawn at random from the shared chords that are tonic in neither key, so repeated calls vary. Pass `random: Random.new(seed)` to repeat a choice.
   - `via:` picks the pivot yourself: either a numeral in the key you leave (`via: :vi`, any case) or a `Pivot` from `pivot_chords`. Only `via:` can use a tonic chord as the pivot.
   - With no usable pivot, the progression goes straight from I to V and I of the new key.
-  - The chords are voice-led from the opening I (C4 E4 G4, C4 E4 A4, D4 F#4 A4, D4 G4 B4 for C to G via vi). `voice_leading: false` returns every chord in root position in its own key's octave. rcoremidi's `Clip#modulate` passes `voice_leading:` through and its specs pin the voice-led chords, so change both repos together.
+  - The chords are voice-led from the opening I (C4 E4 G4, C4 E4 A4, D4 F#4 A4, D4 G4 B4 for C to G via vi). `voice_leading: false` returns every chord in root position in its own key's octave. archaeopteryx's `Clip#modulate` passes `voice_leading:` through and its specs pin the voice-led chords, so change both repos together.
 
 ## Specs
 
